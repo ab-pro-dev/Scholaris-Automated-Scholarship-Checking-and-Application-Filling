@@ -6,14 +6,36 @@ This file is the living memory of the **Scholaris** project (formerly ASCAF). It
 
 ## 1. Current State Summary
 
-- **Current Phase**: Phase 2: Authentication & User Profile Management
-- **Active Task**: None (Awaiting user approval to start `TASK-009: Frontend Authentication & Student Profile UI`)
-- **Project Status**: Backend Student Profile Management APIs (`@scholaris/api`) completed with full CRUD for personal info, education records, language skills, achievements, work experience, tenant isolation, and 100% verified test suite (30/30 tests passing).
-- **Next Recommended Task**: `TASK-009: Frontend Authentication & Student Profile UI`
+- **Current Phase**: Phase 3: Document Vault & Text Extraction
+- **Active Task**: None (Awaiting user approval to start `TASK-010: S3/MinIO Object Storage & Presigned Upload Service`)
+- **Project Status**: Phase 2 (Authentication & Student Profile Management) 100% completed across both Backend and Frontend. Next.js App Router frontend (@scholaris/web) provides complete authentication flows, responsive layouts, academic design system tokens, and full 5-tab student profile management with live application readiness scoring.
+- **Next Recommended Task**: `TASK-010: S3/MinIO Object Storage & Presigned Upload Service`
 
 ---
 
 ## 2. Recently Completed Tasks
+
+### TASK-009: Frontend Authentication & Student Profile UI
+- **Completed On**: 2026-11-16
+- **What Was Done**:
+  - Built typed API client (`apps/web/lib/api.ts`) supporting Bearer authentication, auto-refresh token rotation, and typed CRUD methods for profile, education, languages, achievements, and experiences.
+  - Implemented `AuthProvider` and `useAuth` hook (`apps/web/context/auth-context.tsx`) managing user session state, local token storage, and profile synchronization.
+  - Created reusable design system components (`apps/web/components/ui/`): `Button` (with variants, loading spinners, and tactile active states), `Input` (with validation errors and icons), `Card`, `Badge` (verified/uncertain/suspicious), `Tabs` (accessible segmented pill tabs), `Modal` (dialog with backdrop blur and ESC handling), and `Alert`.
+  - Built Authentication pages (`apps/web/app/(auth)/`):
+    - `/login`: Academic sign-in surface with password visibility toggle, Zod validation, and error feedback.
+    - `/register`: Student registration with real-time password strength matrix (8+ chars, upper, lower, number).
+  - Built Dashboard layout (`apps/web/app/(dashboard)/layout.tsx`) with academic header, student profile status, navigation links, sign-out action, and strict user consent indicators.
+  - Built Student Profile Management interface (`apps/web/app/(dashboard)/profile/page.tsx`):
+    - `ProfileHeader`: Avatar initials, verified badges, and dynamic application readiness score gauge (0-100%).
+    - `PersonalInfoTab`: Multi-column form for names, DOB, gender, citizenship, location, and need-based financial statement.
+    - `EducationTab`: Academic degree timeline cards with GPA in tabular numerals, honors, and Add/Edit/Delete modals.
+    - `LanguagesTab`: Language proficiency cards with test types (IELTS, TOEFL, Duolingo), scores, and test dates.
+    - `AchievementsTab`: Honors, awards, hackathon wins, granting institutions, and descriptions.
+    - `ExperiencesTab`: Research assistantships, internships, leadership roles, date ranges, and impact descriptions.
+- **Verification Results**:
+  - `pnpm -r check-types` passed with 0 errors across all 6 workspace packages.
+  - `pnpm --filter @scholaris/web build` passed cleanly: prerendered all 7 static routes (`/`, `/_not-found`, `/login`, `/register`, `/profile`).
+  - `pnpm --filter @scholaris/api test` passed 30/30 tests green.
 
 ### TASK-008: Backend Student Profile Management APIs
 - **Completed On**: 2026-11-16
