@@ -155,7 +155,7 @@ Tasks must be executed sequentially following their defined dependencies.
   2. `POST /api/v1/documents/confirm-upload` records document record in PostgreSQL.
   3. `GET /api/v1/documents/:id/download` provides short-lived presigned download URLs.
   4. Private documents are inaccessible without user JWT.
-- **Status**: Pending
+- **Status**: Completed
 
 ### TASK-011: Document Text & Metadata Extraction Worker
 - **Description**: Implement asynchronous document parser using BullMQ to extract plain text and structural data from uploaded PDFs and DOCX files.

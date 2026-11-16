@@ -7,13 +7,27 @@ This file is the living memory of the **Scholaris** project (formerly ASCAF). It
 ## 1. Current State Summary
 
 - **Current Phase**: Phase 3: Document Vault & Text Extraction
-- **Active Task**: None (Awaiting user approval to start `TASK-010: S3/MinIO Object Storage & Presigned Upload Service`)
-- **Project Status**: Phase 2 (Authentication & Student Profile Management) 100% completed across both Backend and Frontend. Next.js App Router frontend (@scholaris/web) provides complete authentication flows, responsive layouts, academic design system tokens, and full 5-tab student profile management with live application readiness scoring.
-- **Next Recommended Task**: `TASK-010: S3/MinIO Object Storage & Presigned Upload Service`
+- **Active Task**: None (Awaiting user approval to start `TASK-012: Frontend Document Vault UI` or `TASK-011: Document Text & Metadata Extraction Worker`)
+- **Project Status**: S3/MinIO Object Storage & Presigned Upload Service (`@scholaris/api`) implemented with cryptographic upload/download URLs, strict 10MB/MIME validation, confirmation workflow with `ocrStatus: PENDING`, deletion cleanup, and 100% verified automated test suite (41/41 tests passing).
+- **Next Recommended Task**: `TASK-012: Frontend Document Vault UI`
 
 ---
 
 ## 2. Recently Completed Tasks
+
+### TASK-010: S3/MinIO Object Storage & Presigned Upload Service
+- **Completed On**: 2026-11-16
+- **What Was Done**:
+  - Installed `@aws-sdk/client-s3` and `@aws-sdk/s3-request-presigner` in `@scholaris/api`.
+  - Added S3/MinIO configuration environment variables (`S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_REGION`, `S3_FORCE_PATH_STYLE`) to `apps/api/src/config/env.ts`.
+  - Added `confirmUploadSchema` to `@scholaris/validation`.
+  - Built `S3Service` (`apps/api/src/modules/documents/s3.service.ts`) managing S3 client initialization, presigned PUT upload URL generation, presigned GET download URL generation with content-disposition attachments, and S3 object deletion.
+  - Built `DocumentService` (`apps/api/src/modules/documents/document.service.ts`) enforcing user-scoped file keys (`documents/${userId}/${uuid()}-${filename}`), upload confirmation in PostgreSQL, document listing with category filtering, secure download URL generation, and deletion cascade.
+  - Built `DocumentController` and registered `documentRoutes` under `/api/v1/documents` protected by `server.authenticate`.
+  - Authored comprehensive automated test suite (`apps/api/test/document.test.ts`) covering 11 scenarios including 401 unauthenticated access, size limit validation (>10MB rejected), successful presigned URL generation, DB confirmation, category filtering, and 3 cross-tenant isolation checks (preventing unauthorized users from confirming, downloading, or deleting another student's documents).
+- **Verification Results**:
+  - `pnpm -r check-types` passed with 0 errors across all 6 workspace packages.
+  - `pnpm --filter @scholaris/api test` passed with **41/41 tests green** (2 health + 10 auth + 18 profile + 11 document).
 
 ### TASK-009: Frontend Authentication & Student Profile UI
 - **Completed On**: 2026-11-16

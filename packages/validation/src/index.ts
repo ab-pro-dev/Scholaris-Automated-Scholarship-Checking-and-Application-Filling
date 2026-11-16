@@ -145,6 +145,25 @@ export const presignedUploadRequestSchema = z.object({
 
 export type PresignedUploadRequestInput = z.infer<typeof presignedUploadRequestSchema>;
 
+export const confirmUploadSchema = z.object({
+  fileKey: z.string().min(1, 'File key is required'),
+  name: z.string().min(1, 'Document name is required').max(255),
+  category: z.enum([
+    'TRANSCRIPT',
+    'CV',
+    'PASSPORT',
+    'RECOMMENDATION',
+    'MOTIVATION_LETTER',
+    'CERTIFICATE',
+    'OTHER',
+  ]),
+  mimeType: z.string().min(1),
+  sizeBytes: z.number().int().positive().max(10 * 1024 * 1024),
+  checksum: z.string().max(64).optional().default(''),
+});
+
+export type ConfirmUploadInput = z.infer<typeof confirmUploadSchema>;
+
 // ==========================================
 // Scholarship & Verification Schemas
 // ==========================================

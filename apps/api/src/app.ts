@@ -12,6 +12,7 @@ import authPlugin from './plugins/auth.js';
 import { healthRoutes } from './modules/health/health.routes.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
 import { profileRoutes } from './modules/profiles/profile.routes.js';
+import { documentRoutes } from './modules/documents/document.routes.js';
 
 export async function buildApp(opts: FastifyServerOptions = {}): Promise<FastifyInstance> {
   const app = Fastify({
@@ -87,6 +88,7 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
   await app.register(healthRoutes);
   await app.register(authRoutes);
   await app.register(profileRoutes);
+  await app.register(documentRoutes);
 
   return app;
 }

@@ -12,6 +12,12 @@ const envSchema = z.object({
   JWT_SECRET: z.string().default('scholaris-dev-jwt-secret-key-32-bytes-secure!!'),
   JWT_REFRESH_SECRET: z.string().default('scholaris-dev-refresh-secret-key-32-bytes!!'),
   CORS_ORIGIN: z.string().default('http://localhost:3000'),
+  S3_ENDPOINT: z.string().default('http://localhost:9000'),
+  S3_BUCKET: z.string().default('scholaris-documents'),
+  S3_ACCESS_KEY: z.string().default('minioadmin'),
+  S3_SECRET_KEY: z.string().default('minioadmin'),
+  S3_REGION: z.string().default('us-east-1'),
+  S3_FORCE_PATH_STYLE: z.preprocess((val) => val === 'true' || val === true || val === undefined, z.boolean()).default(true),
 });
 
 export const env = envSchema.parse(process.env);
