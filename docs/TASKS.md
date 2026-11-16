@@ -66,9 +66,10 @@ Tasks must be executed sequentially following their defined dependencies.
 - **Priority**: High
 - **Acceptance Criteria**:
   1. `packages/database/prisma/schema.prisma` contains all entities: `Users`, `UserProfiles`, `EducationRecords`, `LanguageSkills`, `Achievements`, `Experiences`, `Documents`, `Scholarships`, `ScholarshipSources`, `EligibilityRequirements`, `EligibilityResults`, `Applications`, `ApplicationFields`, `FieldMappings`, `MissingInformation`, `ApplicationDocuments`, `BrowserSessions`, `AutomationJobs`, `AIRequests`, `Notifications`, `AuditLogs`.
-  2. Prisma validation succeeds (`npx prisma validate`).
+  2. Prisma validation succeeds (`prisma validate`).
   3. Generated Prisma Client exports cleanly for workspace consumption.
-- **Status**: Pending
+  4. Workspace type-check passes with 0 errors.
+- **Status**: Completed
 
 ### TASK-004: Fastify API Application Skeleton
 - **Description**: Scaffold `apps/api` with Fastify, TypeScript, basic plugins (CORS, sensible, rate-limit), health check endpoint, and Prisma integration.

@@ -1,0 +1,612 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ==========================================
+// Enums
+// ==========================================
+
+enum Role {
+  STUDENT
+  ADMIN
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum EducationLevel {
+  HIGH_SCHOOL
+  UNDERGRADUATE
+  POSTGRADUATE
+  DOCTORAL
+}
+
+enum LanguageTestType {
+  IELTS
+  TOEFL
+  DUOLINGO
+  NONE
+  OTHER
+}
+
+enum ExperienceType {
+  WORK
+  VOLUNTEER
+  RESEARCH
+  LEADERSHIP
+}
+
+enum DocumentCategory {
+  TRANSCRIPT
+  CV
+  PASSPORT
+  RECOMMENDATION
+  MOTIVATION_LETTER
+  CERTIFICATE
+  OTHER
+}
+
+enum OCRStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum FundingType {
+  FULL
+  PARTIAL
+  TUITION_ONLY
+  STIPEND_ONLY
+  OTHER
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  UNCERTAIN
+  SUSPICIOUS
+}
+
+enum RequirementCategory {
+  NATIONALITY
+  AGE
+  GPA
+  DEGREE_LEVEL
+  LANGUAGE
+  FIELD
+  FINANCIAL
+  OTHER
+}
+
+enum RequirementOperator {
+  EQ
+  GTE
+  LTE
+  IN
+}
+
+enum EligibilityStatus {
+  ELIGIBLE
+  INELIGIBLE
+  INSUFFICIENT_INFO
+}
+
+enum ApplicationStatus {
+  DRAFT
+  PREPARING
+  WAITING_FOR_INPUT
+  READY_FOR_REVIEW
+  AWAITING_APPROVAL
+  SUBMITTING
+  SUBMITTED
+  SUBMISSION_FAILED
+  REQUIRES_MANUAL_ACTION
+}
+
+enum FieldType {
+  TEXT
+  TEXTAREA
+  SELECT
+  RADIO
+  CHECKBOX
+  FILE
+  DATE
+}
+
+enum MappingSourceType {
+  PROFILE
+  DOCUMENT
+  USER_INPUT
+  AI_DRAFT
+}
+
+enum MissingInfoCategory {
+  FIELD_VALUE
+  DOCUMENT_UPLOAD
+  ESSAY_RESPONSE
+}
+
+enum BrowserSessionStatus {
+  INITIALIZING
+  RUNNING
+  PAUSED_FOR_USER
+  COMPLETED
+  ERROR
+}
+
+enum AutomationJobType {
+  VERIFY_URL
+  EXTRACT_FORM
+  FILL_FORM
+  SUBMIT_APPLICATION
+}
+
+enum AutomationJobStatus {
+  QUEUED
+  ACTIVE
+  COMPLETED
+  FAILED
+}
+
+enum AIProviderType {
+  GEMINI
+  OPENROUTER
+}
+
+enum AITaskType {
+  VERIFICATION
+  ELIGIBILITY
+  MATCHING
+  ESSAY_DRAFT
+}
+
+enum AIRequestStatus {
+  SUCCESS
+  FALLBACK
+  FAILED
+}
+
+enum NotificationType {
+  INFO
+  WARNING
+  ACTION_REQUIRED
+  SUCCESS
+}
+
+// ==========================================
+// Authentication & User Models
+// ==========================================
+
+model User {
+  id              String   @id @default(uuid()) @db.Uuid
+  email           String   @unique @db.VarChar(255)
+  passwordHash    String   @db.VarChar(255)
+  role            Role     @default(STUDENT)
+  isEmailVerified Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  profile            UserProfile?
+  educationRecords   EducationRecord[]
+  languageSkills     LanguageSkill[]
+  achievements       Achievement[]
+  experiences        Experience[]
+  documents          Document[]
+  applications       Application[]
+  eligibilityResults EligibilityResult[]
+  aiRequests         AIRequest[]
+  notifications      Notification[]
+  auditLogs          AuditLog[]
+
+  @@map("users")
+}
+
+model UserProfile {
+  id                      String    @id @default(uuid()) @db.Uuid
+  userId                  String    @unique @db.Uuid
+  firstName               String    @db.VarChar(100)
+  middleName              String?   @db.VarChar(100)
+  lastName                String    @db.VarChar(100)
+  fullName                String    @db.VarChar(255)
+  dateOfBirth             DateTime? @db.Date
+  gender                  Gender?
+  nationality             String    @db.VarChar(100)
+  residenceCountry        String    @db.VarChar(100)
+  city                    String    @db.VarChar(100)
+  address                 String?   @db.VarChar(255)
+  phone                   String?   @db.VarChar(30)
+  altEmail                String?   @db.VarChar(255)
+  passportNumberEncrypted String?   @db.Text
+  familyIncomeTier        String?   @db.VarChar(50)
+  financialStatement      String?   @db.Text
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+model EducationRecord {
+  id           String         @id @default(uuid()) @db.Uuid
+  userId       String         @db.Uuid
+  level        EducationLevel
+  institution  String         @db.VarChar(255)
+  faculty      String?        @db.VarChar(255)
+  degree       String?        @db.VarChar(255)
+  fieldOfStudy String         @db.VarChar(255)
+  startDate    DateTime       @db.Date
+  endDate      DateTime?      @db.Date
+  isCurrent    Boolean        @default(false)
+  gpa          Float?
+  maxGpa       Float?
+  honors       String?        @db.VarChar(255)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("education_records")
+}
+
+model LanguageSkill {
+  id               String            @id @default(uuid()) @db.Uuid
+  userId           String            @db.Uuid
+  language         String            @db.VarChar(100)
+  isNative         Boolean           @default(false)
+  proficiencyLevel String?           @db.VarChar(50)
+  testType         LanguageTestType?
+  testScore        String?           @db.VarChar(50)
+  testDate         DateTime?         @db.Date
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("language_skills")
+}
+
+model Achievement {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @db.Uuid
+  title        String    @db.VarChar(255)
+  issuer       String?   @db.VarChar(255)
+  dateReceived DateTime? @db.Date
+  description  String?   @db.Text
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("achievements")
+}
+
+model Experience {
+  id           String         @id @default(uuid()) @db.Uuid
+  userId       String         @db.Uuid
+  type         ExperienceType
+  organization String         @db.VarChar(255)
+  roleTitle    String         @db.VarChar(255)
+  startDate    DateTime       @db.Date
+  endDate      DateTime?      @db.Date
+  isCurrent    Boolean        @default(false)
+  description  String?        @db.Text
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("experiences")
+}
+
+// ==========================================
+// Document Management Models
+// ==========================================
+
+model Document {
+  id            String           @id @default(uuid()) @db.Uuid
+  userId        String           @db.Uuid
+  name          String           @db.VarChar(255)
+  category      DocumentCategory
+  fileKey       String           @unique @db.VarChar(500)
+  fileUrl       String?          @db.Text
+  mimeType      String           @db.VarChar(100)
+  sizeBytes     Int
+  extractedText String?          @db.Text
+  ocrStatus     OCRStatus        @default(PENDING)
+  checksum      String           @db.VarChar(64)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  user                 User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applicationDocuments ApplicationDocument[]
+
+  @@index([userId, category])
+  @@map("documents")
+}
+
+// ==========================================
+// Scholarship & Verification Models
+// ==========================================
+
+model Scholarship {
+  id                  String             @id @default(uuid()) @db.Uuid
+  title               String             @db.VarChar(255)
+  providerName        String             @db.VarChar(255)
+  websiteUrl          String             @db.Text
+  applicationUrl      String?            @db.Text
+  deadline            DateTime?
+  fundingType         FundingType        @default(FULL)
+  verificationStatus  VerificationStatus @default(PENDING)
+  verificationScore   Float              @default(0.0)
+  verificationSummary String?            @db.Text
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  sources              ScholarshipSource[]
+  requirements         EligibilityRequirement[]
+  eligibilityResults   EligibilityResult[]
+  applications         Application[]
+
+  @@index([verificationStatus])
+  @@map("scholarships")
+}
+
+model ScholarshipSource {
+  id                String      @id @default(uuid()) @db.Uuid
+  scholarshipId     String      @db.Uuid
+  sourceUrl         String      @db.Text
+  sourceDomain      String      @db.VarChar(255)
+  institutionMatch  Boolean     @default(false)
+  scamFlagsDetected Json        @default("[]")
+  evidenceNotes     String?     @db.Text
+  createdAt         DateTime    @default(now())
+
+  scholarship Scholarship @relation(fields: [scholarshipId], references: [id], onDelete: Cascade)
+
+  @@index([scholarshipId])
+  @@map("scholarship_sources")
+}
+
+model EligibilityRequirement {
+  id            String              @id @default(uuid()) @db.Uuid
+  scholarshipId String              @db.Uuid
+  category      RequirementCategory
+  operator      RequirementOperator
+  requiredValue String              @db.VarChar(255)
+  isMandatory   Boolean             @default(true)
+  description   String?             @db.Text
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  scholarship Scholarship @relation(fields: [scholarshipId], references: [id], onDelete: Cascade)
+
+  @@index([scholarshipId])
+  @@map("eligibility_requirements")
+}
+
+model EligibilityResult {
+  id                String            @id @default(uuid()) @db.Uuid
+  userId            String            @db.Uuid
+  scholarshipId     String            @db.Uuid
+  status            EligibilityStatus
+  score             Float             @default(0.0)
+  criteriaBreakdown Json
+  evaluatedAt       DateTime          @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scholarship Scholarship @relation(fields: [scholarshipId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, scholarshipId])
+  @@index([userId])
+  @@map("eligibility_results")
+}
+
+// ==========================================
+// Application & Automation Models
+// ==========================================
+
+model Application {
+  id                 String            @id @default(uuid()) @db.Uuid
+  userId             String            @db.Uuid
+  scholarshipId      String            @db.Uuid
+  status             ApplicationStatus @default(DRAFT)
+  userApprovedAt     DateTime?
+  submittedAt        DateTime?
+  submissionProofUrl String?           @db.Text
+  notes              String?           @db.Text
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  user                 User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scholarship          Scholarship           @relation(fields: [scholarshipId], references: [id], onDelete: Cascade)
+  fields               ApplicationField[]
+  fieldMappings        FieldMapping[]
+  missingInformation   MissingInformation[]
+  applicationDocuments ApplicationDocument[]
+  automationJobs       AutomationJob[]
+  browserSessions      BrowserSession[]
+
+  @@index([userId, status])
+  @@index([scholarshipId])
+  @@map("applications")
+}
+
+model ApplicationField {
+  id            String      @id @default(uuid()) @db.Uuid
+  applicationId String      @db.Uuid
+  fieldKey      String      @db.VarChar(255)
+  label         String      @db.VarChar(255)
+  fieldType     FieldType
+  options       Json?
+  isRequired    Boolean     @default(false)
+  pageNumber    Int         @default(1)
+  createdAt     DateTime    @default(now())
+
+  application        Application          @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  fieldMappings      FieldMapping[]
+  missingInformation MissingInformation[]
+
+  @@index([applicationId])
+  @@map("application_fields")
+}
+
+model FieldMapping {
+  id             String            @id @default(uuid()) @db.Uuid
+  applicationId  String            @db.Uuid
+  fieldId        String            @db.Uuid
+  mappedValue    String            @db.Text
+  sourceType     MappingSourceType
+  sourcePath     String?           @db.VarChar(255)
+  confidence     Float             @default(1.0)
+  isEditedByUser Boolean           @default(false)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  application Application      @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  field       ApplicationField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@map("field_mappings")
+}
+
+model MissingInformation {
+  id            String              @id @default(uuid()) @db.Uuid
+  applicationId String              @db.Uuid
+  fieldId       String?             @db.Uuid
+  prompt        String              @db.Text
+  category      MissingInfoCategory
+  isResolved    Boolean             @default(false)
+  userResponse  String?             @db.Text
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  application Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  field       ApplicationField? @relation(fields: [fieldId], references: [id], onDelete: SetNull)
+
+  @@index([applicationId])
+  @@map("missing_information")
+}
+
+model ApplicationDocument {
+  id             String   @id @default(uuid()) @db.Uuid
+  applicationId  String   @db.Uuid
+  documentId     String   @db.Uuid
+  targetFieldKey String?  @db.VarChar(255)
+  createdAt      DateTime @default(now())
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  document    Document    @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([applicationId, documentId])
+  @@map("application_documents")
+}
+
+model BrowserSession {
+  id                String               @id @default(uuid()) @db.Uuid
+  applicationId     String?              @db.Uuid
+  jobId             String?              @db.Uuid
+  workerId          String               @db.VarChar(100)
+  sessionStatus     BrowserSessionStatus @default(INITIALIZING)
+  lastScreenshotUrl String?              @db.Text
+  errorMessage      String?              @db.Text
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  application   Application?   @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  automationJob AutomationJob? @relation(fields: [jobId], references: [id], onDelete: SetNull)
+
+  @@index([applicationId])
+  @@map("browser_sessions")
+}
+
+model AutomationJob {
+  id            String              @id @default(uuid()) @db.Uuid
+  applicationId String?             @db.Uuid
+  type          AutomationJobType
+  bullJobId     String?             @db.VarChar(100)
+  status        AutomationJobStatus @default(QUEUED)
+  attempts      Int                 @default(0)
+  errorLog      String?             @db.Text
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  application     Application?     @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  browserSessions BrowserSession[]
+
+  @@index([applicationId])
+  @@index([status])
+  @@map("automation_jobs")
+}
+
+// ==========================================
+// AI Service & Auditing Models
+// ==========================================
+
+model AIRequest {
+  id               String          @id @default(uuid()) @db.Uuid
+  userId           String?         @db.Uuid
+  provider         AIProviderType
+  model            String          @db.VarChar(100)
+  taskType         AITaskType
+  promptTokens     Int             @default(0)
+  completionTokens Int             @default(0)
+  costEstimate     Float?
+  latencyMs        Int             @default(0)
+  status           AIRequestStatus @default(SUCCESS)
+  createdAt        DateTime        @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([provider, taskType])
+  @@map("ai_requests")
+}
+
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @db.Uuid
+  title     String           @db.VarChar(255)
+  message   String           @db.Text
+  type      NotificationType @default(INFO)
+  isRead    Boolean          @default(false)
+  linkUrl   String?          @db.VarChar(500)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String?  @db.Uuid
+  action     String   @db.VarChar(100)
+  entityType String   @db.VarChar(100)
+  entityId   String?  @db.VarChar(100)
+  ipAddress  String?  @db.VarChar(50)
+  userAgent  String?  @db.Text
+  details    Json?
+  timestamp  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action, timestamp])
+  @@map("audit_logs")
+}

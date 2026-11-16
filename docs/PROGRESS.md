@@ -7,13 +7,26 @@ This file is the living memory of the **Scholaris** project (formerly ASCAF). It
 ## 1. Current State Summary
 
 - **Current Phase**: Phase 1: Project Foundation & Monorepo Setup
-- **Active Task**: None (Awaiting user approval to start `TASK-003`)
-- **Project Status**: Base TypeScript configuration and shared packages (@scholaris/types, @scholaris/shared, @scholaris/validation) implemented and verified.
-- **Next Recommended Task**: `TASK-003: Database Package & Prisma Schema Definition`
+- **Active Task**: None (Awaiting user approval to start `TASK-004`)
+- **Project Status**: Database package (@scholaris/database) implemented with full 21-entity relational schema, validated, and generated.
+- **Next Recommended Task**: `TASK-004: Fastify API Application Skeleton`
 
 ---
 
 ## 2. Recently Completed Tasks
+
+### TASK-003: Database Package & Prisma Schema Definition
+- **Completed On**: 2026-11-16
+- **What Was Done**:
+  - Created `@scholaris/database` package with Prisma ORM.
+  - Defined PostgreSQL schema with all 21 models, 22 enums, foreign key relations, and indexes.
+  - Configured pnpm v12 `onlyBuiltDependencies` in `pnpm-workspace.yaml` for Prisma engines.
+  - Created root `.env.example` template with PostgreSQL, Redis, S3, AI keys, and JWT configurations.
+  - Generated Prisma Client and exported singleton client from `packages/database/src/index.ts`.
+- **Verification Results**:
+  - `prisma validate` passed: `The schema at prisma/schema.prisma is valid 🚀`.
+  - `prisma generate` succeeded generating client v6.19.3.
+  - `pnpm check-types` passed across all 4 packages with 0 errors.
 
 ### TASK-002: Base TypeScript & Shared Packages Setup
 - **Completed On**: 2026-11-16
