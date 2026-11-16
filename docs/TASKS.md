@@ -91,7 +91,7 @@ Tasks must be executed sequentially following their defined dependencies.
   2. Tailwind CSS configuration matches the academic-trust color palette and typography rules.
   3. `docs/DESIGN_SYSTEM.md` documents visual identity, colors, typography, and component guidelines.
   4. Landing page renders with verified responsive navigation and theme tokens.
-- **Status**: Pending
+- **Status**: Completed
 
 ### TASK-006: Local Infrastructure & Docker Compose Setup
 - **Description**: Create `docker-compose.yml` for local development supporting PostgreSQL 16, Redis 7, and MinIO object storage.

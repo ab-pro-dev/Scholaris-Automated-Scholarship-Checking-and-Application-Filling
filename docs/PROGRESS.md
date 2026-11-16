@@ -7,13 +7,25 @@ This file is the living memory of the **Scholaris** project (formerly ASCAF). It
 ## 1. Current State Summary
 
 - **Current Phase**: Phase 1: Project Foundation & Monorepo Setup
-- **Active Task**: None (Awaiting user approval to start `TASK-005`)
-- **Project Status**: Fastify API application skeleton (@scholaris/api) implemented, connected to Prisma, and verified via automated tests.
-- **Next Recommended Task**: `TASK-005: Next.js Web Application Skeleton & Design System Tokens`
+- **Active Task**: None (Awaiting user approval to start `TASK-006`)
+- **Project Status**: Next.js web application (@scholaris/web) and Design System (docs/DESIGN_SYSTEM.md) initialized, styled, and verified with successful Next.js production build.
+- **Next Recommended Task**: `TASK-006: Local Infrastructure & Docker Compose Setup`
 
 ---
 
 ## 2. Recently Completed Tasks
+
+### TASK-005: Next.js Web Application Skeleton & Design System Tokens
+- **Completed On**: 2026-11-16
+- **What Was Done**:
+  - Authored comprehensive visual guidelines and token specifications in `docs/DESIGN_SYSTEM.md`.
+  - Scaffolded `apps/web` with Next.js 15 (App Router), React 19, TypeScript, and Tailwind CSS.
+  - Implemented custom academic-trust tokens (brand navy, verified emerald, uncertain amber, suspicious crimson, paper canvas).
+  - Built responsive landing page (`app/page.tsx`) with authoritative navigation, value pillars, and live interactive application review simulation.
+  - Applied browser surface craftsmanship (selection coloring, tabular numerals, accessible focus outlines).
+- **Verification Results**:
+  - `pnpm check-types` passed with 0 errors across all 6 workspace projects.
+  - `pnpm --filter @scholaris/web build` passed cleanly, generating static routes and production bundles.
 
 ### TASK-004: Fastify API Application Skeleton
 - **Completed On**: 2026-11-16
