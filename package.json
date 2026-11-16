@@ -9,7 +9,11 @@
     "build": "pnpm --filter '*' build",
     "lint": "pnpm --filter '*' lint",
     "test": "pnpm --filter '*' test",
-    "check-types": "pnpm --filter '*' check-types"
+    "check-types": "pnpm -r --parallel check-types"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "typescript": "^5.7.3"
   },
   "engines": {
     "node": ">=20.0.0",

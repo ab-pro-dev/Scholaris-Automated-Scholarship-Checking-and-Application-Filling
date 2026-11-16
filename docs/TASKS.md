@@ -55,9 +55,10 @@ Tasks must be executed sequentially following their defined dependencies.
 - **Acceptance Criteria**:
   1. `tsconfig.base.json` configured with strict type-checking and modern ECMAScript target.
   2. `packages/types` exports base DTOs and system enums.
-  3. `packages/validation` exports Zod schemas matching user, profile, and scholarship models.
-  4. Type-checking passes cleanly across all workspace packages (`pnpm check-types`).
-- **Status**: Pending
+  3. `packages/shared` exports shared constants, formatting utilities, and error definitions.
+  4. `packages/validation` exports Zod schemas matching user, profile, and scholarship models.
+  5. Type-checking passes cleanly across all workspace packages (`pnpm check-types`).
+- **Status**: Completed
 
 ### TASK-003: Database Package & Prisma Schema Definition
 - **Description**: Setup `packages/database`, initialize Prisma with PostgreSQL provider, and define the complete 21-entity relational schema.
