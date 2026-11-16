@@ -80,7 +80,7 @@ Tasks must be executed sequentially following their defined dependencies.
   2. Health check route `GET /health` returns status `200 OK` with system uptime.
   3. Prisma client successfully connects or mocks in test mode.
   4. Automated API test verifies `GET /health`.
-- **Status**: Pending
+- **Status**: Completed
 
 ### TASK-005: Next.js Web Application Skeleton & Design System Tokens
 - **Description**: Scaffold `apps/web` with Next.js 15 (App Router), Tailwind CSS, Lucide icons, and create `docs/DESIGN_SYSTEM.md`.

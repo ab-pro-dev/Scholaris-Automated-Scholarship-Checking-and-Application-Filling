@@ -7,13 +7,26 @@ This file is the living memory of the **Scholaris** project (formerly ASCAF). It
 ## 1. Current State Summary
 
 - **Current Phase**: Phase 1: Project Foundation & Monorepo Setup
-- **Active Task**: None (Awaiting user approval to start `TASK-004`)
-- **Project Status**: Database package (@scholaris/database) implemented with full 21-entity relational schema, validated, and generated.
-- **Next Recommended Task**: `TASK-004: Fastify API Application Skeleton`
+- **Active Task**: None (Awaiting user approval to start `TASK-005`)
+- **Project Status**: Fastify API application skeleton (@scholaris/api) implemented, connected to Prisma, and verified via automated tests.
+- **Next Recommended Task**: `TASK-005: Next.js Web Application Skeleton & Design System Tokens`
 
 ---
 
 ## 2. Recently Completed Tasks
+
+### TASK-004: Fastify API Application Skeleton
+- **Completed On**: 2026-11-16
+- **What Was Done**:
+  - Scaffolded `apps/api` with Fastify v5 and TypeScript.
+  - Registered `@fastify/cors`, `@fastify/helmet`, `@fastify/sensible`, and `@fastify/rate-limit`.
+  - Built custom `prismaPlugin` decorating Fastify with `@scholaris/database` and handling graceful teardown.
+  - Implemented typed environment configuration (`src/config/env.ts`) using Zod.
+  - Implemented `GET /health` and `GET /api/v1/health` with resilient database connection check.
+  - Added Vitest test suite (`test/health.test.ts`) validating health checks and payload integrity.
+- **Verification Results**:
+  - `pnpm check-types` passed with 0 errors across all 5 workspace projects (`types`, `shared`, `validation`, `database`, `api`).
+  - `pnpm --filter @scholaris/api test` passed with 2/2 tests green.
 
 ### TASK-003: Database Package & Prisma Schema Definition
 - **Completed On**: 2026-11-16
