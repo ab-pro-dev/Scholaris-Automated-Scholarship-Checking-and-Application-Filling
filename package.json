@@ -1,0 +1,18 @@
+{
+  "name": "scholaris-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Scholaris — Intelligent Scholarship Verification & Application Assistant",
+  "packageManager": "pnpm@12.21.0",
+  "scripts": {
+    "dev": "pnpm --filter '*' --parallel dev",
+    "build": "pnpm --filter '*' build",
+    "lint": "pnpm --filter '*' lint",
+    "test": "pnpm --filter '*' test",
+    "check-types": "pnpm --filter '*' check-types"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}
