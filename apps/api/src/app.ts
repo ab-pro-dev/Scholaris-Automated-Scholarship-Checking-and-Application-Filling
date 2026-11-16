@@ -11,6 +11,7 @@ import prismaPlugin from './plugins/prisma.js';
 import authPlugin from './plugins/auth.js';
 import { healthRoutes } from './modules/health/health.routes.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
+import { profileRoutes } from './modules/profiles/profile.routes.js';
 
 export async function buildApp(opts: FastifyServerOptions = {}): Promise<FastifyInstance> {
   const app = Fastify({
@@ -85,6 +86,7 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
   // Register Routes
   await app.register(healthRoutes);
   await app.register(authRoutes);
+  await app.register(profileRoutes);
 
   return app;
 }

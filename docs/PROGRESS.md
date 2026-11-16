@@ -7,13 +7,25 @@ This file is the living memory of the **Scholaris** project (formerly ASCAF). It
 ## 1. Current State Summary
 
 - **Current Phase**: Phase 2: Authentication & User Profile Management
-- **Active Task**: None (Awaiting user approval to start `TASK-008`)
-- **Project Status**: Backend Authentication Module (@scholaris/api) implemented with registration, bcrypt hashing, JWT issuance & rotation, Fastify auth guard, and 100% verified test suite.
-- **Next Recommended Task**: `TASK-008: Backend Student Profile Management APIs`
+- **Active Task**: None (Awaiting user approval to start `TASK-009: Frontend Authentication & Student Profile UI`)
+- **Project Status**: Backend Student Profile Management APIs (`@scholaris/api`) completed with full CRUD for personal info, education records, language skills, achievements, work experience, tenant isolation, and 100% verified test suite (30/30 tests passing).
+- **Next Recommended Task**: `TASK-009: Frontend Authentication & Student Profile UI`
 
 ---
 
 ## 2. Recently Completed Tasks
+
+### TASK-008: Backend Student Profile Management APIs
+- **Completed On**: 2026-11-16
+- **What Was Done**:
+  - Implemented `ProfileService` (`apps/api/src/modules/profiles/profile.service.ts`) providing full student profile aggregation (`getFullProfile`), personal detail updates with full-name recalculation, and CRUD methods for `educationRecord`, `languageSkill`, `achievement`, and `experience`.
+  - Implemented `ProfileController` (`apps/api/src/modules/profiles/profile.controller.ts`) parsing request inputs via `@scholaris/validation` and dynamically resolving request-scoped Prisma clients.
+  - Implemented `profileRoutes` (`apps/api/src/modules/profiles/profile.routes.ts`) under `/api/v1/profile` protected by `server.authenticate` preHandler guard.
+  - Registered `profileRoutes` in Fastify application bootstrap (`apps/api/src/app.ts`).
+  - Added comprehensive automated integration test suite (`apps/api/test/profile.test.ts`) covering all 18 endpoints, validation logic, and cross-tenant access denial (User B cannot read/modify/delete User A's academic or profile records).
+- **Verification Results**:
+  - `pnpm check-types` passed with 0 errors across all 6 workspace packages.
+  - `pnpm test` passed 30/30 tests green (2 health + 10 auth + 18 profile).
 
 ### TASK-007: Backend Authentication Module
 - **Completed On**: 2026-11-16
