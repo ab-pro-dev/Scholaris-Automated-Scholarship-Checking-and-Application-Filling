@@ -3,11 +3,14 @@ import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import sensible from '@fastify/sensible';
 import rateLimit from '@fastify/rate-limit';
+import { ZodError } from 'zod';
 
 import { AppError } from '@scholaris/shared';
 import { env } from './config/env.js';
 import prismaPlugin from './plugins/prisma.js';
+import authPlugin from './plugins/auth.js';
 import { healthRoutes } from './modules/health/health.routes.js';
+import { authRoutes } from './modules/auth/auth.routes.js';
 
 export async function buildApp(opts: FastifyServerOptions = {}): Promise<FastifyInstance> {
   const app = Fastify({
@@ -29,8 +32,9 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
     timeWindow: '1 minute',
   });
 
-  // Database Plugin
+  // Database & Auth Plugins
   await app.register(prismaPlugin);
+  await app.register(authPlugin);
 
   // Global Error Handler
   app.setErrorHandler((error: FastifyError | Error, _request, reply) => {
@@ -41,6 +45,17 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
           code: error.code,
           message: error.message,
           details: error.details,
+        },
+      });
+    }
+
+    if (error instanceof ZodError) {
+      return reply.status(400).send({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid input data',
+          details: error.flatten().fieldErrors,
         },
       });
     }
@@ -69,6 +84,7 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
 
   // Register Routes
   await app.register(healthRoutes);
+  await app.register(authRoutes);
 
   return app;
 }
