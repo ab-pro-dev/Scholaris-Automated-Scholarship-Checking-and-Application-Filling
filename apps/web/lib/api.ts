@@ -5,6 +5,9 @@ import {
   LanguageSkillDTO,
   AchievementDTO,
   ExperienceDTO,
+  DocumentDTO,
+  DocumentCategory,
+  OCRStatus,
   ApiResponse,
 } from '@scholaris/types';
 import {
@@ -15,6 +18,8 @@ import {
   LanguageSkillInput,
   AchievementInput,
   ExperienceInput,
+  PresignedUploadRequestInput,
+  ConfirmUploadInput,
 } from '@scholaris/validation';
 
 const API_BASE_URL =
@@ -308,6 +313,95 @@ class ApiClient {
 
   async deleteExperience(id: string): Promise<void> {
     await this.request<{ message: string }>(`/api/v1/profile/experiences/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // ==========================================
+  // Document Vault API Endpoints
+  // ==========================================
+
+  async getPresignedUpload(input: PresignedUploadRequestInput): Promise<{
+    uploadUrl: string;
+    fileKey: string;
+    expiresInSeconds: number;
+  }> {
+    return this.request<{
+      uploadUrl: string;
+      fileKey: string;
+      expiresInSeconds: number;
+    }>('/api/v1/documents/presigned-upload', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async uploadToS3(
+    uploadUrl: string,
+    file: File | Blob,
+    mimeType: string,
+    onProgress?: (percent: number) => void
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', uploadUrl);
+      xhr.setRequestHeader('Content-Type', mimeType);
+
+      if (xhr.upload && onProgress) {
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const percent = Math.round((event.loaded / event.total) * 100);
+            onProgress(percent);
+          }
+        };
+      }
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve();
+        } else {
+          reject(new ApiError('UPLOAD_FAILED', `S3 storage error: ${xhr.statusText || xhr.status}`, xhr.status));
+        }
+      };
+
+      xhr.onerror = () => {
+        reject(new ApiError('NETWORK_ERROR', 'Network error during file upload to storage', 0));
+      };
+
+      xhr.send(file);
+    });
+  }
+
+  async confirmUpload(input: ConfirmUploadInput): Promise<DocumentDTO> {
+    return this.request<DocumentDTO>('/api/v1/documents/confirm-upload', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async listDocuments(category?: DocumentCategory): Promise<DocumentDTO[]> {
+    const query = category ? `?category=${category}` : '';
+    return this.request<DocumentDTO[]>(`/api/v1/documents${query}`, {
+      method: 'GET',
+    });
+  }
+
+  async getDownloadUrl(id: string): Promise<{
+    downloadUrl: string;
+    expiresInSeconds: number;
+    document: DocumentDTO;
+  }> {
+    return this.request<{
+      downloadUrl: string;
+      expiresInSeconds: number;
+      document: DocumentDTO;
+    }>(`/api/v1/documents/${id}/download`, {
+      method: 'GET',
+    });
+  }
+
+  async deleteDocument(id: string): Promise<void> {
+    await this.request<{ message: string }>(`/api/v1/documents/${id}`, {
       method: 'DELETE',
     });
   }

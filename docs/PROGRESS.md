@@ -7,13 +7,28 @@ This file is the living memory of the **Scholaris** project (formerly ASCAF). It
 ## 1. Current State Summary
 
 - **Current Phase**: Phase 3: Document Vault & Text Extraction
-- **Active Task**: None (Awaiting user approval to start `TASK-012: Frontend Document Vault UI` or `TASK-011: Document Text & Metadata Extraction Worker`)
-- **Project Status**: S3/MinIO Object Storage & Presigned Upload Service (`@scholaris/api`) implemented with cryptographic upload/download URLs, strict 10MB/MIME validation, confirmation workflow with `ocrStatus: PENDING`, deletion cleanup, and 100% verified automated test suite (41/41 tests passing).
-- **Next Recommended Task**: `TASK-012: Frontend Document Vault UI`
+- **Active Task**: None (Awaiting user approval to start `TASK-011: Document Text & Metadata Extraction Worker`)
+- **Project Status**: Document Vault UI (`@scholaris/web`) implemented with direct presigned S3 upload, real-time progress reporting, category filtering, search, readiness checklist, preview modal with OCR text viewer, and secure presigned download action. Production build passes cleanly with 8 static routes.
+- **Next Recommended Task**: `TASK-011: Document Text & Metadata Extraction Worker`
 
 ---
 
 ## 2. Recently Completed Tasks
+
+### TASK-012: Frontend Document Vault UI
+- **Completed On**: 2026-11-17
+- **What Was Done**:
+  - Extended API client (`apps/web/lib/api.ts`) with S3 presigned upload retrieval, direct S3 XMLHttpRequest upload with real-time percentage progress tracking, DB confirmation, document listing, presigned download, and deletion.
+  - Added "Document Vault" link with `FolderLock` icon in dashboard navigation (`apps/web/app/(dashboard)/layout.tsx`).
+  - Built `VaultSummary` widget (`apps/web/components/documents/vault-summary.tsx`) with dynamic storage statistics, application vault readiness gauge (0-100%), and 5-point document checklist (Transcript, CV, Passport, Recommendations, Certificates).
+  - Built `DocumentUploadZone` (`apps/web/components/documents/document-upload-zone.tsx`) with drag-and-drop support, client-side MIME/size validation (<=10MB), category selection, and S3 progress bar.
+  - Built `DocumentCard` (`apps/web/components/documents/document-card.tsx`) featuring category badges, file type icons (PDF, Word, Image), size in tabular numerals, upload dates, OCR status badges, and download/preview/delete actions.
+  - Built `DocumentPreviewModal` (`apps/web/components/documents/document-preview-modal.tsx`) with metadata grid, OCR text viewer with copy button, and direct download.
+  - Built main Document Vault surface (`apps/web/app/(dashboard)/documents/page.tsx`) with category filter pills, search bar, empty states, and deletion cascade.
+- **Verification Results**:
+  - `pnpm -r check-types` passed with 0 errors across all 6 workspace packages.
+  - `pnpm --filter @scholaris/web build` passed cleanly: generated all 8 static pages (`/`, `/_not-found`, `/documents`, `/login`, `/profile`, `/register`).
+  - `pnpm --filter @scholaris/api test` passed 41/41 tests green.
 
 ### TASK-010: S3/MinIO Object Storage & Presigned Upload Service
 - **Completed On**: 2026-11-16

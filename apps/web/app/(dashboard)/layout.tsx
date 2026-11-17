@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '../../context/auth-context';
-import { GraduationCap, User, Search, FileText, LogOut, Loader2, ShieldCheck } from 'lucide-react';
+import { GraduationCap, User, Search, FileText, LogOut, Loader2, ShieldCheck, FolderLock } from 'lucide-react';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 
@@ -34,6 +34,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const navLinks = [
     { href: '/profile', label: 'Academic Profile', icon: <User className="w-4 h-4" /> },
+    { href: '/documents', label: 'Document Vault', icon: <FolderLock className="w-4 h-4" /> },
     { href: '/scholarships', label: 'Verification Engine', icon: <Search className="w-4 h-4" /> },
     { href: '/applications', label: 'My Applications', icon: <FileText className="w-4 h-4" /> },
   ];

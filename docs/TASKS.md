@@ -175,7 +175,7 @@ Tasks must be executed sequentially following their defined dependencies.
   1. Drag-and-drop upload zone with progress indicators.
   2. Document list categorized by type (Transcripts, CV, Certificates, Recommendation Letters).
   3. Document preview modal and secure download action.
-- **Status**: Pending
+- **Status**: Completed
 
 ---
 
