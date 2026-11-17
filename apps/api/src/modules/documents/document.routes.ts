@@ -11,5 +11,6 @@ export const documentRoutes: FastifyPluginAsync = async (server) => {
   server.post('/api/v1/documents/confirm-upload', controller.confirmUpload);
   server.get('/api/v1/documents', controller.listDocuments);
   server.get('/api/v1/documents/:id/download', controller.getDownloadUrl);
+  server.post('/api/v1/documents/:id/reprocess', controller.reprocessDocument);
   server.delete('/api/v1/documents/:id', controller.deleteDocument);
 };

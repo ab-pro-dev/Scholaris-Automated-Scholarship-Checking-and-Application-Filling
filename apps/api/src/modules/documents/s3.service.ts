@@ -80,4 +80,17 @@ export class S3Service {
       return false;
     }
   }
+
+  async getObjectBuffer(fileKey: string): Promise<Buffer> {
+    const command = new GetObjectCommand({
+      Bucket: this.bucket,
+      Key: fileKey,
+    });
+    const response = await this.client.send(command);
+    if (!response.Body) {
+      throw new Error(`S3 object body is empty for key: ${fileKey}`);
+    }
+    const byteArray = await response.Body.transformToByteArray();
+    return Buffer.from(byteArray);
+  }
 }

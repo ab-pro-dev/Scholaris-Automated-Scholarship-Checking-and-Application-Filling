@@ -6,14 +6,29 @@ This file is the living memory of the **Scholaris** project (formerly ASCAF). It
 
 ## 1. Current State Summary
 
-- **Current Phase**: Phase 3: Document Vault & Text Extraction
-- **Active Task**: None (Awaiting user approval to start `TASK-011: Document Text & Metadata Extraction Worker`)
-- **Project Status**: Document Vault UI (`@scholaris/web`) implemented with direct presigned S3 upload, real-time progress reporting, category filtering, search, readiness checklist, preview modal with OCR text viewer, and secure presigned download action. Production build passes cleanly with 8 static routes.
-- **Next Recommended Task**: `TASK-011: Document Text & Metadata Extraction Worker`
+- **Current Phase**: Phase 4: Centralized Multi-Provider AI Service
+- **Active Task**: None (Awaiting user approval to start `TASK-013: AI Provider Package (packages/ai)`)
+- **Project Status**: Phase 3 (Document Vault & Text Extraction) is 100% completed across Backend, Queue Workers, and Frontend. Asynchronous text & metadata extraction engine (`@scholaris/api`) parses PDFs and DOCX files via BullMQ, updates database records with extracted text, handles corrupt files gracefully without worker crashes, and provides reprocess endpoints. 49/49 automated tests passing green.
+- **Next Recommended Task**: `TASK-013: AI Provider Package (packages/ai)`
 
 ---
 
 ## 2. Recently Completed Tasks
+
+### TASK-011: Document Text & Metadata Extraction Worker
+- **Completed On**: 2026-11-17
+- **What Was Done**:
+  - Installed `bullmq`, `ioredis`, `pdf-parse`, and `mammoth` in `@scholaris/api`.
+  - Added `getObjectBuffer(fileKey)` to `S3Service` (`apps/api/src/modules/documents/s3.service.ts`) using AWS SDK v3 `transformToByteArray()`.
+  - Implemented `DocumentExtractorService` (`apps/api/src/modules/documents/document-extractor.service.ts`) extracting clean, structured plain text from PDF (`PDFParse`), DOCX (`mammoth.extractRawText`), and multimodal image documents, with whitespace normalization and custom `DocumentExtractionError` handling.
+  - Implemented BullMQ queue management (`apps/api/src/modules/documents/document.queue.ts`) with lazy Redis initialization, exponential backoff retries, and test-environment bypass.
+  - Implemented BullMQ worker processor (`apps/api/src/modules/documents/document.worker.ts`) executing status transitions (`PENDING` -> `PROCESSING` -> `COMPLETED`), saving text in PostgreSQL, and catching corrupted or encrypted archives gracefully (`FAILED` status).
+  - Integrated automatic job dispatching on `confirmUpload` and built reprocess endpoint `POST /api/v1/documents/:id/reprocess` with multi-tenant isolation.
+  - Authored comprehensive test suite (`apps/api/test/document-worker.test.ts`) covering 8 unit and pipeline test cases (PDF extraction, corrupt buffer handling, empty buffers, S3 pipeline execution, failure resilience, and cross-tenant reprocess safety).
+- **Verification Results**:
+  - `pnpm -r check-types` passed with 0 errors across all 6 workspace packages.
+  - `pnpm --filter @scholaris/api test` passed with **49/49 tests green** (2 health + 10 auth + 18 profile + 11 document + 8 worker).
+  - `pnpm --filter @scholaris/web build` passed generating all 8 static pages.
 
 ### TASK-012: Frontend Document Vault UI
 - **Completed On**: 2026-11-17

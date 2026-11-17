@@ -72,6 +72,20 @@ export class DocumentController {
     });
   };
 
+  reprocessDocument = async (
+    request: FastifyRequest<{ Params: IdParam }>,
+    reply: FastifyReply
+  ) => {
+    const userId = request.user.sub;
+    const { id } = request.params;
+    const service = this.getService(request);
+    const result = await service.reprocessDocument(userId, id);
+    return reply.status(200).send({
+      success: true,
+      data: result,
+    });
+  };
+
   deleteDocument = async (
     request: FastifyRequest<{ Params: IdParam }>,
     reply: FastifyReply

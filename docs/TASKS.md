@@ -165,7 +165,7 @@ Tasks must be executed sequentially following their defined dependencies.
   1. BullMQ job triggers on document upload.
   2. Text extracted from PDFs/DOCX and stored in `Documents.extractedText`.
   3. Handles corrupt or password-protected files gracefully without crashing worker.
-- **Status**: Pending
+- **Status**: Completed
 
 ### TASK-012: Frontend Document Vault UI
 - **Description**: Build document management interface in `apps/web` allowing drag-and-drop upload, categorization, extraction status viewing, and document replacement.

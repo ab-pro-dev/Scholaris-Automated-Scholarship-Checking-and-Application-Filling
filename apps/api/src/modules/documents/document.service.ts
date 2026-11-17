@@ -7,6 +7,7 @@ import {
   ConfirmUploadInput,
 } from '@scholaris/validation';
 import { S3Service } from './s3.service.js';
+import { enqueueDocumentExtraction } from './document.queue.js';
 
 export interface PresignedUploadResponse {
   uploadUrl: string;
@@ -77,7 +78,44 @@ export class DocumentService {
       },
     });
 
+    // Enqueue background OCR extraction
+    await enqueueDocumentExtraction({
+      documentId: document.id,
+      fileKey: document.fileKey,
+      mimeType: document.mimeType,
+      name: document.name,
+      userId,
+    });
+
     return this.mapDocumentToDTO(document);
+  }
+
+  /**
+   * Re-triggers text and metadata extraction for an existing document.
+   */
+  async reprocessDocument(userId: string, documentId: string): Promise<DocumentDTO> {
+    const document = await this.prisma.document.findFirst({
+      where: { id: documentId, userId },
+    });
+
+    if (!document) {
+      throw new NotFoundError('Document not found or access denied');
+    }
+
+    const updated = await this.prisma.document.update({
+      where: { id: documentId },
+      data: { ocrStatus: 'PENDING' },
+    });
+
+    await enqueueDocumentExtraction({
+      documentId: document.id,
+      fileKey: document.fileKey,
+      mimeType: document.mimeType,
+      name: document.name,
+      userId,
+    });
+
+    return this.mapDocumentToDTO(updated);
   }
 
   /**
