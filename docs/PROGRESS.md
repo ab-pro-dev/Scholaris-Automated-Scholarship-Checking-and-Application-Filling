@@ -7,13 +7,31 @@ This file is the living memory of the **Scholaris** project (formerly ASCAF). It
 ## 1. Current State Summary
 
 - **Current Phase**: Phase 4: Centralized Multi-Provider AI Service
-- **Active Task**: None (Awaiting user approval to start `TASK-013: AI Provider Package (packages/ai)`)
-- **Project Status**: Phase 3 (Document Vault & Text Extraction) is 100% completed across Backend, Queue Workers, and Frontend. Asynchronous text & metadata extraction engine (`@scholaris/api`) parses PDFs and DOCX files via BullMQ, updates database records with extracted text, handles corrupt files gracefully without worker crashes, and provides reprocess endpoints. 49/49 automated tests passing green.
-- **Next Recommended Task**: `TASK-013: AI Provider Package (packages/ai)`
+- **Active Task**: None (Awaiting user approval to start `TASK-014: AI Token Usage & Cost Auditing`)
+- **Project Status**: Multi-provider AI orchestration package (`@scholaris/ai`) is implemented and verified. Features unified integration with Google Gemini (`@google/generative-ai`) as primary and OpenRouter REST API as fallback, automatic failover on 429/timeout/5xx errors, schema-driven JSON generation validated with Zod, and PII anonymization/sanitization masking sensitive student data (Passports, SSNs, Gov IDs, Phones, Financial accounts, Emails) before prompt submission. Automated test suite has 9/9 tests green, apps/api has 49/49 tests green, and workspace typechecks with 0 errors.
+- **Next Recommended Task**: `TASK-014: AI Token Usage & Cost Auditing`
 
 ---
 
 ## 2. Recently Completed Tasks
+
+### TASK-013: AI Provider Package (`packages/ai`)
+- **Completed On**: 2026-11-18
+- **What Was Done**:
+  - Initialized `@scholaris/ai` in `packages/ai` within the pnpm workspace with modern ESM and TypeScript strict mode.
+  - Installed `@google/generative-ai` and configured fallback to OpenRouter OpenAI-compatible REST API.
+  - Authored domain types (`packages/ai/src/types.ts`): `AIServiceConfig`, `AIExecutionOptions`, `RawAIResponse`, `AIExecutionResult`, `AIProviderError`, `AISchemaValidationError`.
+  - Authored abstract `BaseAIProvider` (`packages/ai/src/providers/base.provider.ts`).
+  - Implemented `GeminiProvider` (`packages/ai/src/providers/gemini.provider.ts`) leveraging Google Gemini SDK with system instructions, JSON MIME response mode, temperature/token controls, and error mapping.
+  - Implemented `OpenRouterProvider` (`packages/ai/src/providers/openrouter.provider.ts`) using native fetch against OpenRouter endpoint with strict typing and failover error mapping.
+  - Authored `anonymizePII` and `deAnonymizePII` utility (`packages/ai/src/anonymizer.ts`) to sanitize and mask sensitive student PII (Emails, Phone numbers, SSNs, Passports, Financial accounts, custom student identifiers) before dispatching to external LLMs, with automated restoration.
+  - Implemented `AIService` orchestrator (`packages/ai/src/ai.service.ts`) managing automatic failover from primary to fallback provider, optional prompt PII sanitization/restoration, markdown JSON fencing cleanup, and schema enforcement against isomorphic Zod schemas.
+  - Authored test suite (`packages/ai/test/ai.test.ts`) covering 9 automated test scenarios (schema validation, markdown stripping, provider failover on 429, unconfigured primary fallback, schema rejection, total provider failure handling, free-form text generation, PII regex masking, and end-to-end prompt sanitization).
+- **Verification Results**:
+  - `pnpm --filter @scholaris/ai check-types` passed with 0 errors.
+  - `pnpm --filter @scholaris/ai test` passed with **9/9 tests green**.
+  - `pnpm -r check-types` passed with 0 errors across all 7 workspace packages.
+  - `pnpm --filter @scholaris/api test` passed with **49/49 tests green**.
 
 ### TASK-011: Document Text & Metadata Extraction Worker
 - **Completed On**: 2026-11-17

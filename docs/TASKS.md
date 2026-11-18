@@ -182,7 +182,7 @@ Tasks must be executed sequentially following their defined dependencies.
 ## Phase 4: Centralized Multi-Provider AI Service
 
 ### TASK-013: AI Provider Package (`packages/ai`)
-- **Description**: Build unified AI orchestration client with Google Gemini API (primary) and OpenRouter API (fallback), supporting structured JSON schemas and error handling.
+- **Description**: Build unified AI orchestration client with Google Gemini API (primary) and OpenRouter API (fallback), supporting structured JSON schemas, PII anonymization, and error handling.
 - **Dependencies**: TASK-002
 - **Priority**: High
 - **Acceptance Criteria**:
@@ -190,7 +190,7 @@ Tasks must be executed sequentially following their defined dependencies.
   2. OpenRouter provider serves as automatic fallback on rate limit, timeout, or provider failure.
   3. Anonymization utility masks sensitive PII before prompt submission.
   4. Unit tests with mocked LLM responses verify fallback logic and schema validation.
-- **Status**: Pending
+- **Status**: Completed
 
 ### TASK-014: AI Token Usage & Cost Auditing
 - **Description**: Implement logging and token usage tracking stored in the `AIRequests` table for administrative review and cost controls.

@@ -307,6 +307,31 @@ importers:
         specifier: ^5.7.3
         version: 5.9.3
 
+  packages/ai:
+    dependencies:
+      '@google/generative-ai':
+        specifier: ^0.24.0
+        version: 0.24.1
+      '@scholaris/shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@scholaris/types':
+        specifier: workspace:*
+        version: link:../types
+      zod:
+        specifier: ^3.24.2
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.13.4
+        version: 22.20.5
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.5
+        version: 3.2.7(@types/node@22.20.5)(jiti@2.7.0)(tsx@4.23.15)
+
   packages/database:
     dependencies:
       '@prisma/client':
@@ -610,6 +635,10 @@ packages:
 
   '@fastify/sensible@6.0.8':
     resolution: {integrity: sha512-hc/q+esn+I0djWva/zplEOplZ8SECJBQ0Dx1/qUeOwITR+PTPcuLHNhgJf0fhZ+82Z6En5YhpQxqwIYXWIzerw==}
+
+  '@google/generative-ai@0.24.1':
+    resolution: {integrity: sha512-MqO+MLfM6kjxcKoy0p1wRzG3b4ZZXtPI+z2IE26UogS2Cm/XHO+7gGRBh6gcJsOiIVoH93UwKvW4HdgiOZCy9Q==}
+    engines: {node: '>=18.0.0'}
 
   '@img/sharp-darwin-arm64@0.33.5':
     resolution: {integrity: sha512-UT4p+iz/2H4twwAoLCqfA9UH5pI6DggwKEGuaPy7nCVQ8ZsiY5PIcrRvD1DzuY3qYL07NtIQcWnBSY/heikIFQ==}
@@ -2589,6 +2618,8 @@ snapshots:
       http-errors: 2.0.1
       type-is: 2.1.0
       vary: 1.1.2
+
+  '@google/generative-ai@0.24.1': {}
 
   '@img/sharp-darwin-arm64@0.33.5':
     optionalDependencies:
