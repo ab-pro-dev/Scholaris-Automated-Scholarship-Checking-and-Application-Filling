@@ -6,14 +6,32 @@ This file is the living memory of the **Scholaris** project (formerly ASCAF). It
 
 ## 1. Current State Summary
 
-- **Current Phase**: Phase 4: Centralized Multi-Provider AI Service
-- **Active Task**: None (Awaiting user approval to start `TASK-014: AI Token Usage & Cost Auditing`)
-- **Project Status**: Multi-provider AI orchestration package (`@scholaris/ai`) is implemented and verified. Features unified integration with Google Gemini (`@google/generative-ai`) as primary and OpenRouter REST API as fallback, automatic failover on 429/timeout/5xx errors, schema-driven JSON generation validated with Zod, and PII anonymization/sanitization masking sensitive student data (Passports, SSNs, Gov IDs, Phones, Financial accounts, Emails) before prompt submission. Automated test suite has 9/9 tests green, apps/api has 49/49 tests green, and workspace typechecks with 0 errors.
-- **Next Recommended Task**: `TASK-014: AI Token Usage & Cost Auditing`
+- **Current Phase**: Phase 5: Scholarship Ingestion & Authenticity Verification
+- **Active Task**: None (Awaiting user approval to start `TASK-015: URL Ingestion & SSRF Protection`)
+- **Project Status**: Phase 4 (Centralized Multi-Provider AI Service) is 100% completed across provider orchestration, fallback mechanisms, PII anonymization, and auditing/cost controls. `AIAuditService` records every prompt execution with token counts, latency, and model-specific cost estimates into PostgreSQL `AIRequests`. `AIRateLimiter` protects against runaway loops and accidental LLM billing spikes with sliding-window requests-per-minute and daily token limits. 62/62 API tests green, 9/9 AI package tests green, 8/8 static Next.js pages verified.
+- **Next Recommended Task**: `TASK-015: URL Ingestion & SSRF Protection`
 
 ---
 
 ## 2. Recently Completed Tasks
+
+### TASK-014: AI Token Usage & Cost Auditing
+- **Completed On**: 2026-11-18
+- **What Was Done**:
+  - Linked `@scholaris/ai` into `@scholaris/api` dependencies.
+  - Added AI environment variables (`GEMINI_API_KEY`, `GEMINI_MODEL`, `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `AI_RATE_LIMIT_PER_MINUTE`, `AI_DAILY_TOKEN_LIMIT`) to `apps/api/src/config/env.ts` and `.env.example`.
+  - Built model token pricing calculator (`apps/api/src/modules/ai/pricing.ts`) computing prompt and completion costs per million tokens for Gemini and OpenRouter models.
+  - Implemented `AIRateLimiter` (`apps/api/src/modules/ai/ai-rate-limiter.ts`) enforcing sliding-window requests-per-minute (RPM) limits and daily token quotas per user, throwing `AIRateLimitError` with retry-after metadata.
+  - Built `AIAuditService` (`apps/api/src/modules/ai/ai-audit.service.ts`) wrapping AI operations with automatic database logging in `AIRequest` (`status: SUCCESS | FALLBACK | FAILED`, latency, token counts, cost estimate), user usage aggregation (`getUserUsageStats`), and paginated audit log queries.
+  - Added Fastify error handler in `apps/api/src/app.ts` to return HTTP 429 with `Retry-After` header on `AIRateLimitError`.
+  - Implemented authenticated endpoints: `GET /api/v1/ai/usage` (user metrics and quota status) and `GET /api/v1/ai/audit` (paginated audit logs with multi-tenant isolation).
+  - Authored comprehensive test suite (`apps/api/test/ai-audit.test.ts`) covering 13 test cases (pricing math, rate limiter windowing, quota status, database logging, fallback tracking, error recording, and HTTP endpoints with auth & tenant isolation).
+- **Verification Results**:
+  - `pnpm --filter @scholaris/api check-types` passed with 0 errors.
+  - `pnpm --filter @scholaris/api test` passed with **62/62 tests green** (13 audit + 2 health + 10 auth + 18 profile + 11 document + 8 worker).
+  - `pnpm --filter @scholaris/ai test` passed with **9/9 tests green**.
+  - `pnpm -r check-types` passed with 0 errors across all 7 workspace packages.
+  - `pnpm --filter @scholaris/web build` passed with all 8 static pages generated cleanly.
 
 ### TASK-013: AI Provider Package (`packages/ai`)
 - **Completed On**: 2026-11-18

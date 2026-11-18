@@ -18,6 +18,7 @@
     "@fastify/jwt": "^9.0.4",
     "@fastify/rate-limit": "^10.2.2",
     "@fastify/sensible": "^6.0.3",
+    "@scholaris/ai": "workspace:*",
     "@scholaris/database": "workspace:*",
     "@scholaris/shared": "workspace:*",
     "@scholaris/types": "workspace:*",

@@ -199,7 +199,7 @@ Tasks must be executed sequentially following their defined dependencies.
 - **Acceptance Criteria**:
   1. Every prompt execution logs model, prompt tokens, completion tokens, latency, and status in `AIRequests`.
   2. Rate limiter protects against accidental LLM billing spikes.
-- **Status**: Pending
+- **Status**: Completed
 
 ---
 

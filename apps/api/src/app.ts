@@ -13,6 +13,7 @@ import { healthRoutes } from './modules/health/health.routes.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
 import { profileRoutes } from './modules/profiles/profile.routes.js';
 import { documentRoutes } from './modules/documents/document.routes.js';
+import { aiRoutes } from './modules/ai/ai.routes.js';
 
 export async function buildApp(opts: FastifyServerOptions = {}): Promise<FastifyInstance> {
   const app = Fastify({
@@ -47,6 +48,21 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
           code: error.code,
           message: error.message,
           details: error.details,
+        },
+      });
+    }
+
+    if (error.name === 'AIRateLimitError') {
+      const rateLimitErr = error as any;
+      if (rateLimitErr.retryAfterSeconds) {
+        reply.header('Retry-After', rateLimitErr.retryAfterSeconds);
+      }
+      return reply.status(429).send({
+        success: false,
+        error: {
+          code: 'RATE_LIMIT_EXCEEDED',
+          message: error.message,
+          retryAfterSeconds: rateLimitErr.retryAfterSeconds,
         },
       });
     }
@@ -89,6 +105,7 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
   await app.register(authRoutes);
   await app.register(profileRoutes);
   await app.register(documentRoutes);
+  await app.register(aiRoutes);
 
   return app;
 }

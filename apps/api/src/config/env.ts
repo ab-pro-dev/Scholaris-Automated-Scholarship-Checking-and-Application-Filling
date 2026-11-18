@@ -18,6 +18,13 @@ const envSchema = z.object({
   S3_SECRET_KEY: z.string().default('minioadmin'),
   S3_REGION: z.string().default('us-east-1'),
   S3_FORCE_PATH_STYLE: z.preprocess((val) => val === 'true' || val === true || val === undefined, z.boolean()).default(true),
+  // AI Service Configuration
+  GEMINI_API_KEY: z.string().optional(),
+  GEMINI_MODEL: z.string().default('gemini-1.5-flash'),
+  OPENROUTER_API_KEY: z.string().optional(),
+  OPENROUTER_MODEL: z.string().default('meta-llama/llama-3.3-70b-instruct'),
+  AI_RATE_LIMIT_PER_MINUTE: z.coerce.number().default(20),
+  AI_DAILY_TOKEN_LIMIT: z.coerce.number().default(100000),
 });
 
 export const env = envSchema.parse(process.env);
