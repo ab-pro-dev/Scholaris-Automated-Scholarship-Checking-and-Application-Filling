@@ -7,13 +7,36 @@ This file is the living memory of the **Scholaris** project (formerly ASCAF). It
 ## 1. Current State Summary
 
 - **Current Phase**: Phase 6: AI Eligibility Checker
-- **Active Task**: None (Awaiting user approval to start `TASK-018: Scholarship Requirement Extraction`)
-- **Project Status**: Phase 5 (Scholarship Ingestion & Authenticity Verification) is 100% completed across Backend and Frontend. User-facing verification hub (`apps/web/app/(dashboard)/scholarships`) offers URL ingestion with instant client-side validation, preset testing links, semantic status badges (`VERIFIED` emerald, `UNCERTAIN` amber, `SUSPICIOUS` crimson), tabular confidence score gauge (0–100%), scam risk alert cards, collapsible fraud analyst evidence drawer, mandatory form-filling safety lock, and catalog list with status filters. 98/98 backend API tests passing green, 9/9 AI package tests green, and Next.js 15 web app building cleanly with 9/9 static pages.
-- **Next Recommended Task**: `TASK-018: Scholarship Requirement Extraction`
+- **Active Task**: None (Awaiting user approval to start `TASK-019: Eligibility Matching & Scoring Service`)
+- **Project Status**: Phase 5 (Scholarship Ingestion & Authenticity Verification) is 100% completed across Backend and Frontend. TASK-018 (Scholarship Requirement Extraction) in Phase 6 is completed and verified, delivering structured AI eligibility criteria parsing across GPA, age, nationality, degree level, language proficiency, and academic fields into normalized `EligibilityRequirement` database records with mandatory vs preferred classification and safety gating. 106/106 backend API tests passing green, 9/9 AI package tests green, and Next.js 15 web app building cleanly with 9/9 static pages.
+- **Next Recommended Task**: `TASK-019: Eligibility Matching & Scoring Service`
 
 ---
 
 ## 2. Recently Completed Tasks
+
+### TASK-018: Scholarship Requirement Extraction
+- **Completed On**: 2026-11-19
+- **What Was Done**:
+  - Defined `createRequirementSchema` and `CreateRequirementInput` in `packages/validation/src/index.ts` covering `RequirementCategory` (`GPA`, `AGE`, `DEGREE_LEVEL`, `NATIONALITY`, `LANGUAGE`, `FIELD`, `FINANCIAL`, `OTHER`), operators (`EQ`, `GTE`, `LTE`, `IN`), `requiredValue`, `isMandatory`, and `description`.
+  - Authored `ScholarshipRequirementsService` (`apps/api/src/modules/scholarships/scholarship-requirements.service.ts`) extracting structured eligibility requirements from scholarship content using `@scholaris/ai` (`AIAuditService`) with `taskType: 'ELIGIBILITY'`.
+  - Configured prompt engineering with deterministic temperature (0.1) and strict normalization instructions for GPA benchmarks, age caps, citizenship lists, degree levels, and language scores.
+  - Implemented mandatory vs preferred criteria classification (`isMandatory: true` for non-negotiable prerequisites, `isMandatory: false` for desirable/preference qualifications).
+  - Enforced defense-in-depth safety rule: blocked requirement extraction on any scholarship flagged as `SUSPICIOUS` (`SCHOLARSHIP_SUSPICIOUS`), preventing downstream processing on fraudulent entries.
+  - Implemented transactional database persistence into PostgreSQL `EligibilityRequirement` records, deduplicating previous requirements per scholarship.
+  - Added REST API endpoints:
+    - `POST /api/v1/scholarships/:id/requirements/extract`: Runs AI requirement extraction with audit logging and returns metrics.
+    - `GET /api/v1/scholarships/:id/requirements`: Returns requirements sorted by `isMandatory: desc` and category.
+    - `POST /api/v1/scholarships/:id/requirements`: Allows manual requirement addition.
+    - `DELETE /api/v1/scholarships/requirements/:requirementId`: Deletes a specific requirement.
+  - Re-exported service and controller methods in `apps/api/src/modules/scholarships/index.ts`.
+  - Authored automated test suite (`apps/api/test/scholarship-requirements.test.ts`) covering 8 unit and integration test scenarios (structured criteria extraction, mandatory vs preferred differentiation, operator normalization, safety block on `SUSPICIOUS` status, manual additions, input validation, deletions, and HTTP endpoints with auth).
+- **Verification Results**:
+  - `pnpm --filter @scholaris/api test test/scholarship-requirements.test.ts` passed with **8/8 tests green**.
+  - `pnpm --filter @scholaris/api test` passed with **106/106 tests green**.
+  - `pnpm --filter @scholaris/ai test` passed with **9/9 tests green**.
+  - `pnpm -r check-types` passed with 0 errors across all 7 workspace packages.
+  - `pnpm --filter @scholaris/web build` passed with **9/9 static pages** generated cleanly.
 
 ### TASK-017: Frontend Scholarship Verification & Results UI
 - **Completed On**: 2026-11-19

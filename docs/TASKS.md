@@ -247,7 +247,7 @@ Tasks must be executed sequentially following their defined dependencies.
 - **Acceptance Criteria**:
   1. Converts unstructured scholarship text into normalized `EligibilityRequirements` rows.
   2. Accurately identifies whether each criterion is mandatory or preferred.
-- **Status**: Pending
+- **Status**: Completed
 
 ### TASK-019: Eligibility Matching & Scoring Service
 - **Description**: Compare parsed scholarship requirements against student profile and generate eligibility report (`ELIGIBLE`, `INELIGIBLE`, `INSUFFICIENT_INFO`).

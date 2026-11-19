@@ -176,6 +176,25 @@ export const analyzeScholarshipSchema = z.object({
 
 export type AnalyzeScholarshipInput = z.infer<typeof analyzeScholarshipSchema>;
 
+export const createRequirementSchema = z.object({
+  category: z.enum([
+    'NATIONALITY',
+    'AGE',
+    'GPA',
+    'DEGREE_LEVEL',
+    'LANGUAGE',
+    'FIELD',
+    'FINANCIAL',
+    'OTHER',
+  ]),
+  operator: z.enum(['EQ', 'GTE', 'LTE', 'IN']),
+  requiredValue: z.string().min(1, 'Required value is required').max(255).trim(),
+  isMandatory: z.boolean().default(true),
+  description: z.string().max(500).trim().optional(),
+});
+
+export type CreateRequirementInput = z.infer<typeof createRequirementSchema>;
+
 // ==========================================
 // Application & Approval Schemas
 // ==========================================
