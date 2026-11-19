@@ -170,6 +170,8 @@ export type ConfirmUploadInput = z.infer<typeof confirmUploadSchema>;
 
 export const analyzeScholarshipSchema = z.object({
   url: z.string().url('Must be a valid HTTP or HTTPS URL').trim(),
+  title: z.string().max(255).optional(),
+  providerName: z.string().max(255).optional(),
 });
 
 export type AnalyzeScholarshipInput = z.infer<typeof analyzeScholarshipSchema>;

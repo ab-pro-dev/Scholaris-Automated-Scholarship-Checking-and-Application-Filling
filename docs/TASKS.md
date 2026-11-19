@@ -213,7 +213,7 @@ Tasks must be executed sequentially following their defined dependencies.
   1. `POST /api/v1/scholarships/analyze` validates URL syntax and rejects private/loopback/cloud metadata IP addresses.
   2. Fetches web content with timeout and safe size limits.
   3. Creates `Scholarships` record with status `PENDING`.
-- **Status**: Pending
+- **Status**: Completed
 
 ### TASK-016: AI Authenticity Verification Engine
 - **Description**: Build verification pipeline analyzing domain credibility, institutional affiliation, and scam indicators, classifying results into `VERIFIED`, `UNCERTAIN`, or `SUSPICIOUS`.

@@ -7,13 +7,30 @@ This file is the living memory of the **Scholaris** project (formerly ASCAF). It
 ## 1. Current State Summary
 
 - **Current Phase**: Phase 5: Scholarship Ingestion & Authenticity Verification
-- **Active Task**: None (Awaiting user approval to start `TASK-015: URL Ingestion & SSRF Protection`)
-- **Project Status**: Phase 4 (Centralized Multi-Provider AI Service) is 100% completed across provider orchestration, fallback mechanisms, PII anonymization, and auditing/cost controls. `AIAuditService` records every prompt execution with token counts, latency, and model-specific cost estimates into PostgreSQL `AIRequests`. `AIRateLimiter` protects against runaway loops and accidental LLM billing spikes with sliding-window requests-per-minute and daily token limits. 62/62 API tests green, 9/9 AI package tests green, 8/8 static Next.js pages verified.
-- **Next Recommended Task**: `TASK-015: URL Ingestion & SSRF Protection`
+- **Active Task**: None (Awaiting user approval to start `TASK-016: AI Authenticity Verification Engine`)
+- **Project Status**: Secure scholarship URL ingestion and enterprise multi-layer SSRF defense engine (`apps/api`) implemented. Enforces protocol whitelisting (HTTP/HTTPS only), web port filtering, DNS resolution verification blocking private/loopback/cloud metadata IP ranges (169.254.169.254, RFC 1918 subnets, IPv6 ULA/loopback), redirect re-validation preventing open-redirect-to-internal pivot attacks, and streaming size limits (2MB). Ingestion creates PostgreSQL `Scholarship` records with status `PENDING` and initial `ScholarshipSource`. 88/88 backend API tests passing green, 9/9 AI package tests green, and Next.js 15 web app building cleanly.
+- **Next Recommended Task**: `TASK-016: AI Authenticity Verification Engine`
 
 ---
 
 ## 2. Recently Completed Tasks
+
+### TASK-015: URL Ingestion & SSRF Protection
+- **Completed On**: 2026-11-19
+- **What Was Done**:
+  - Implemented comprehensive SSRF validator (`apps/api/src/modules/scholarships/ssrf-validator.ts`) blocking loopback (`127.0.0.0/8`), cloud metadata endpoints (`169.254.0.0/16`), RFC 1918 private subnets (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`), Carrier-grade NAT (`100.64.0.0/10`), IPv6 loopback (`::1`), IPv6 ULA (`fc00::/7`), and IPv4-mapped IPv6 ranges.
+  - Enforced allowed protocol rules (`http:`, `https:`) and restricted destination ports to standard web ports (80, 443, 8080, 8443), preventing internal port scanning of local databases (Postgres 5432, Redis 6379, MinIO 9000, API 3001).
+  - Built `ScholarshipFetcherService` (`apps/api/src/modules/scholarships/scholarship-fetcher.service.ts`) managing safe content retrieval with 10-second timeout, 2MB payload size limit, User-Agent header, streaming abort on limit breach, and manual redirect inspection with re-validation on every redirect hop.
+  - Implemented metadata extraction parsing `<title>`, `<meta name="description">`, and clean text snippets (stripping scripts, styles, and normalizing whitespace).
+  - Built `ScholarshipService` (`apps/api/src/modules/scholarships/scholarship.service.ts`) creating `Scholarship` records with status `PENDING`, deduplicating existing URLs, and attaching initial `ScholarshipSource` entries.
+  - Built `ScholarshipController` and registered `scholarshipRoutes` in `apps/api/src/app.ts` providing `POST /api/v1/scholarships/analyze`, `GET /api/v1/scholarships/:id`, and `GET /api/v1/scholarships`.
+  - Authored automated test suite (`apps/api/test/scholarship-ingestion.test.ts`) covering 26 unit and integration test scenarios (IPv4/IPv6 private ranges, cloud metadata 169.254.169.254, non-web ports, forbidden suffixes, DNS rebinding, redirect defense, deduplication, and HTTP endpoints).
+- **Verification Results**:
+  - `pnpm --filter @scholaris/api check-types` passed with 0 errors.
+  - `pnpm --filter @scholaris/api test` passed with **88/88 tests green** (26 scholarship + 13 audit + 2 health + 10 auth + 18 profile + 11 document + 8 worker).
+  - `pnpm --filter @scholaris/ai test` passed with **9/9 tests green**.
+  - `pnpm -r check-types` passed with 0 errors across all 7 workspace packages.
+  - `pnpm --filter @scholaris/web build` passed generating 8/8 static pages cleanly.
 
 ### TASK-014: AI Token Usage & Cost Auditing
 - **Completed On**: 2026-11-18
