@@ -257,7 +257,7 @@ Tasks must be executed sequentially following their defined dependencies.
   1. Evaluates each requirement against student's education, nationality, age, and language scores.
   2. Generates comprehensive breakdown of satisfied, failed, and unconfirmed criteria in `EligibilityResults`.
   3. Provides clear, human-understandable explanation of results without hallucination.
-- **Status**: Pending
+- **Status**: Completed
 
 ### TASK-020: Frontend Eligibility Report UI
 - **Description**: Build eligibility summary card in `apps/web` displaying requirement checklist, match score, and missing profile items.

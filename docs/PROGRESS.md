@@ -7,13 +7,44 @@ This file is the living memory of the **Scholaris** project (formerly ASCAF). It
 ## 1. Current State Summary
 
 - **Current Phase**: Phase 6: AI Eligibility Checker
-- **Active Task**: None (Awaiting user approval to start `TASK-019: Eligibility Matching & Scoring Service`)
-- **Project Status**: Phase 5 (Scholarship Ingestion & Authenticity Verification) is 100% completed across Backend and Frontend. TASK-018 (Scholarship Requirement Extraction) in Phase 6 is completed and verified, delivering structured AI eligibility criteria parsing across GPA, age, nationality, degree level, language proficiency, and academic fields into normalized `EligibilityRequirement` database records with mandatory vs preferred classification and safety gating. 106/106 backend API tests passing green, 9/9 AI package tests green, and Next.js 15 web app building cleanly with 9/9 static pages.
-- **Next Recommended Task**: `TASK-019: Eligibility Matching & Scoring Service`
+- **Active Task**: None (Awaiting user approval to start `TASK-020: Frontend Eligibility Report UI`)
+- **Project Status**: Phase 5 (Scholarship Ingestion & Authenticity Verification) is 100% completed across Backend and Frontend. In Phase 6 (AI Eligibility Checker), both `TASK-018` (Requirement Extraction) and `TASK-019` (Eligibility Matching & Scoring) are completed and verified. The matching engine deterministically evaluates student GPA, age, degree level prerequisites, nationality/citizenship pools, language benchmarks (IELTS/TOEFL/CEFR), and fields of study against scholarship criteria, generating weighted match scores (0–100%), verified statuses (`ELIGIBLE`, `INELIGIBLE`, `INSUFFICIENT_INFO`), unconfirmed item checklists, and human-readable feedback. 114/114 backend API tests passing green, 9/9 AI package tests green, and Next.js 15 web app building cleanly with 9/9 static pages.
+- **Next Recommended Task**: `TASK-020: Frontend Eligibility Report UI`
 
 ---
 
 ## 2. Recently Completed Tasks
+
+### TASK-019: Eligibility Matching & Scoring Service
+- **Completed On**: 2026-11-19
+- **What Was Done**:
+  - Enhanced `@scholaris/types` (`packages/types/src/index.ts`) with typed `EligibilityCriterionResult` (including `operator`, `requiredValue`, `isMandatory`, `studentValue`, `explanation`, `missingData`), `EligibilityEvaluationSummary`, and `EligibilityResultDTO`.
+  - Built `EligibilityMatcherService` (`apps/api/src/modules/scholarships/eligibility-matcher.service.ts`) comparing student profiles (`UserProfile`, `EducationRecord`, `LanguageSkill`, `Achievement`, `Experience`) against scholarship `EligibilityRequirement` records.
+  - Implemented category-specific evaluators:
+    - **GPA**: Scales student GPAs to standard 4.0 scale, checks operator `GTE`/`LTE`, and accommodates qualitative honors designations.
+    - **AGE**: Calculates real chronological age from `dateOfBirth` and enforces `LTE`/`GTE` limits.
+    - **DEGREE_LEVEL**: Evaluates hierarchical academic levels (`HIGH_SCHOOL` < `UNDERGRADUATE` < `POSTGRADUATE` < `DOCTORAL`) and prerequisite progression.
+    - **NATIONALITY**: Normalizes citizenship and residence against global international pools, non-UK streams, DAC/developing economy designations, and ISO country aliases.
+    - **LANGUAGE**: Evaluates native speaker exemptions, IELTS and TOEFL benchmark numbers, and CEFR scale proficiencies.
+    - **FIELD**: Evaluates student primary major and degree against target disciplines.
+    - **FINANCIAL & OTHER**: Assesses financial need tiers and extracurricular background.
+  - Implemented scoring and status determination:
+    - `ELIGIBLE`: All mandatory criteria satisfied.
+    - `INELIGIBLE`: Any mandatory criterion failed.
+    - `INSUFFICIENT_INFO`: Mandatory criteria unconfirmed due to missing student profile information.
+    - Weighted match score (0–100%) weighting mandatory criteria higher than preferred criteria.
+  - Enforced defense-in-depth safety rule: blocked eligibility evaluation on any scholarship flagged as `SUSPICIOUS` (`SCHOLARSHIP_SUSPICIOUS`).
+  - Implemented database upsert into PostgreSQL `EligibilityResult` table preserving detailed criteria breakdowns and summary metrics.
+  - Added authenticated REST endpoints:
+    - `POST /api/v1/scholarships/:id/eligibility/check`: Evaluates student against scholarship.
+    - `GET /api/v1/scholarships/:id/eligibility`: Retrieves existing match evaluation.
+  - Authored automated test suite (`apps/api/test/eligibility-matcher.test.ts`) covering 8 unit and integration test scenarios (eligible candidate with 100% score, GPA failure, age limit failure, insufficient profile data, suspicious scholarship safety block, and authenticated HTTP endpoints).
+- **Verification Results**:
+  - `pnpm --filter @scholaris/api test test/eligibility-matcher.test.ts` passed with **8/8 tests green**.
+  - `pnpm --filter @scholaris/api test` passed with **114/114 tests green**.
+  - `pnpm --filter @scholaris/ai test` passed with **9/9 tests green**.
+  - `pnpm -r check-types` passed with 0 errors across all 7 workspace packages.
+  - `pnpm --filter @scholaris/web build` passed with **9/9 static pages** generated cleanly.
 
 ### TASK-018: Scholarship Requirement Extraction
 - **Completed On**: 2026-11-19

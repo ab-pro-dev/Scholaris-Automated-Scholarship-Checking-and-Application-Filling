@@ -17,4 +17,8 @@ export const scholarshipRoutes: FastifyPluginAsync = async (server) => {
   server.get('/api/v1/scholarships/:id/requirements', controller.getRequirements);
   server.post('/api/v1/scholarships/:id/requirements', controller.addManualRequirement);
   server.delete('/api/v1/scholarships/requirements/:requirementId', controller.deleteRequirement);
+
+  // Eligibility Matching & Scoring
+  server.post('/api/v1/scholarships/:id/eligibility/check', controller.evaluateEligibility);
+  server.get('/api/v1/scholarships/:id/eligibility', controller.getEligibilityResult);
 };

@@ -4,6 +4,7 @@ import { ScholarshipService, ListScholarshipsQuery } from './scholarship.service
 import { ScholarshipFetcherService } from './scholarship-fetcher.service.js';
 import { ScholarshipVerificationService } from './scholarship-verification.service.js';
 import { ScholarshipRequirementsService } from './scholarship-requirements.service.js';
+import { EligibilityMatcherService } from './eligibility-matcher.service.js';
 import { AIAuditService } from '../ai/ai-audit.service.js';
 import { AIService } from '@scholaris/ai';
 import { env } from '../../config/env.js';
@@ -13,15 +14,18 @@ export class ScholarshipController {
   private customService?: ScholarshipService;
   private customVerificationService?: ScholarshipVerificationService;
   private customRequirementsService?: ScholarshipRequirementsService;
+  private customMatcherService?: EligibilityMatcherService;
 
   constructor(
     service?: ScholarshipService,
     verificationService?: ScholarshipVerificationService,
-    requirementsService?: ScholarshipRequirementsService
+    requirementsService?: ScholarshipRequirementsService,
+    matcherService?: EligibilityMatcherService
   ) {
     this.customService = service;
     this.customVerificationService = verificationService;
     this.customRequirementsService = requirementsService;
+    this.customMatcherService = matcherService;
   }
 
   private getService(request: FastifyRequest): ScholarshipService {
@@ -77,6 +81,15 @@ export class ScholarshipController {
       (request.server as any).scholarshipFetcherService ||
       new ScholarshipFetcherService();
     return new ScholarshipRequirementsService(prisma, aiAuditService, fetcher);
+  }
+
+  private getMatcherService(request: FastifyRequest): EligibilityMatcherService {
+    if (this.customMatcherService) {
+      return this.customMatcherService;
+    }
+    const prisma = request.server.prisma;
+    const requirementsService = this.getRequirementsService(request);
+    return new EligibilityMatcherService(prisma, requirementsService);
   }
 
   /**
@@ -242,6 +255,56 @@ export class ScholarshipController {
     return reply.status(200).send({
       success: true,
       data: deleted,
+    });
+  };
+
+  /**
+   * POST /api/v1/scholarships/:id/eligibility/check
+   * Evaluates student eligibility against the scholarship requirements.
+   */
+  evaluateEligibility = async (
+    request: FastifyRequest<{ Params: { id: string } }>,
+    reply: FastifyReply
+  ) => {
+    const { id } = request.params;
+    const userId = request.user!.sub;
+    const service = this.getMatcherService(request);
+
+    const result = await service.evaluateEligibility(id, userId);
+
+    return reply.status(200).send({
+      success: true,
+      data: result,
+    });
+  };
+
+  /**
+   * GET /api/v1/scholarships/:id/eligibility
+   * Retrieves an existing eligibility match evaluation for the authenticated student.
+   */
+  getEligibilityResult = async (
+    request: FastifyRequest<{ Params: { id: string } }>,
+    reply: FastifyReply
+  ) => {
+    const { id } = request.params;
+    const userId = request.user!.sub;
+    const service = this.getMatcherService(request);
+
+    const result = await service.getEligibilityResult(id, userId);
+
+    if (!result) {
+      return reply.status(404).send({
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'No eligibility evaluation found for this scholarship.',
+        },
+      });
+    }
+
+    return reply.status(200).send({
+      success: true,
+      data: result,
     });
   };
 }

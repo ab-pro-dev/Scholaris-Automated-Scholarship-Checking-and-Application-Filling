@@ -206,8 +206,24 @@ export type EligibilityStatus = 'ELIGIBLE' | 'INELIGIBLE' | 'INSUFFICIENT_INFO';
 export interface EligibilityCriterionResult {
   requirementId: string;
   category: RequirementCategory;
+  operator?: RequirementOperator;
+  requiredValue?: string;
+  isMandatory?: boolean;
   isMet: boolean | null;
+  studentValue?: string | null;
   explanation: string;
+  missingData?: string | null;
+}
+
+export interface EligibilityEvaluationSummary {
+  totalCriteria: number;
+  satisfiedCount: number;
+  failedCount: number;
+  unconfirmedCount: number;
+  mandatorySatisfied: number;
+  mandatoryTotal: number;
+  missingProfileFields: string[];
+  summary: string;
 }
 
 export interface EligibilityResultDTO {
@@ -217,6 +233,7 @@ export interface EligibilityResultDTO {
   status: EligibilityStatus;
   score: number;
   criteriaBreakdown: EligibilityCriterionResult[];
+  summary?: EligibilityEvaluationSummary;
   evaluatedAt: string;
 }
 
