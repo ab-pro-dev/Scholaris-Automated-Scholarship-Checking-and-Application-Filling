@@ -8,6 +8,10 @@ import {
   DocumentDTO,
   DocumentCategory,
   OCRStatus,
+  ScholarshipDTO,
+  ScholarshipSourceDTO,
+  VerificationStatus,
+  FundingType,
   ApiResponse,
 } from '@scholaris/types';
 import {
@@ -20,6 +24,7 @@ import {
   ExperienceInput,
   PresignedUploadRequestInput,
   ConfirmUploadInput,
+  AnalyzeScholarshipInput,
 } from '@scholaris/validation';
 
 const API_BASE_URL =
@@ -40,6 +45,39 @@ export interface AuthResponseData {
     accessToken: string;
     refreshToken: string;
     expiresIn: number;
+  };
+}
+
+export interface ScholarshipWithSources extends ScholarshipDTO {
+  sources: ScholarshipSourceDTO[];
+}
+
+export interface AnalyzeScholarshipResponse {
+  scholarship: ScholarshipWithSources;
+  isExisting: boolean;
+  extractedPreview: {
+    title: string;
+    description?: string;
+    cleanTextSnippet: string;
+    finalUrl: string;
+    contentLengthBytes: number;
+  };
+}
+
+export interface VerificationResultData {
+  scholarshipId: string;
+  status: VerificationStatus;
+  confidenceScore: number;
+  institutionMatch: boolean;
+  scamFlags: string[];
+  summary: string;
+  evidenceNotes: string;
+  isEligibleForAutoFill: boolean;
+  aiMetrics: {
+    model: string;
+    latencyMs: number;
+    tokensUsed: number;
+    costUSD?: number;
   };
 }
 
@@ -403,6 +441,47 @@ class ApiClient {
   async deleteDocument(id: string): Promise<void> {
     await this.request<{ message: string }>(`/api/v1/documents/${id}`, {
       method: 'DELETE',
+    });
+  }
+
+  // ==========================================
+  // Scholarship Ingestion & Verification
+  // ==========================================
+
+  async analyzeScholarship(input: AnalyzeScholarshipInput): Promise<AnalyzeScholarshipResponse> {
+    return this.request<AnalyzeScholarshipResponse>('/api/v1/scholarships/analyze', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async verifyScholarship(id: string): Promise<VerificationResultData> {
+    return this.request<VerificationResultData>(`/api/v1/scholarships/${id}/verify`, {
+      method: 'POST',
+    });
+  }
+
+  async getScholarship(id: string): Promise<ScholarshipWithSources> {
+    return this.request<ScholarshipWithSources>(`/api/v1/scholarships/${id}`, {
+      method: 'GET',
+    });
+  }
+
+  async listScholarships(params?: {
+    status?: VerificationStatus;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<ScholarshipWithSources[]> {
+    const searchParams = new URLSearchParams();
+    if (params?.status) searchParams.set('status', params.status);
+    if (params?.search) searchParams.set('search', params.search);
+    if (params?.page) searchParams.set('page', params.page.toString());
+    if (params?.limit) searchParams.set('limit', params.limit.toString());
+    const query = searchParams.toString() ? `?${searchParams.toString()}` : '';
+
+    return this.request<ScholarshipWithSources[]>(`/api/v1/scholarships${query}`, {
+      method: 'GET',
     });
   }
 }

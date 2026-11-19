@@ -234,7 +234,7 @@ Tasks must be executed sequentially following their defined dependencies.
   1. URL input form with immediate format validation.
   2. Visual status badge (`VERIFIED` green, `UNCERTAIN` yellow, `SUSPICIOUS` red).
   3. Evidence breakdown drawer displaying institutional corroboration and risk warnings.
-- **Status**: Pending
+- **Status**: Completed
 
 ---
 

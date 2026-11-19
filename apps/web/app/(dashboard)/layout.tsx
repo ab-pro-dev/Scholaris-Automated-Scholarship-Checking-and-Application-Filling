@@ -35,7 +35,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const navLinks = [
     { href: '/profile', label: 'Academic Profile', icon: <User className="w-4 h-4" /> },
     { href: '/documents', label: 'Document Vault', icon: <FolderLock className="w-4 h-4" /> },
-    { href: '/scholarships', label: 'Verification Engine', icon: <Search className="w-4 h-4" /> },
+    { href: '/scholarships', label: 'Scholarship Verifier', icon: <ShieldCheck className="w-4 h-4" /> },
     { href: '/applications', label: 'My Applications', icon: <FileText className="w-4 h-4" /> },
   ];
 

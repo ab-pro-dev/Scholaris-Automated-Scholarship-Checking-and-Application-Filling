@@ -6,14 +6,31 @@ This file is the living memory of the **Scholaris** project (formerly ASCAF). It
 
 ## 1. Current State Summary
 
-- **Current Phase**: Phase 5: Scholarship Ingestion & Authenticity Verification
-- **Active Task**: None (Awaiting user approval to start `TASK-017: Frontend Scholarship Verification & Results UI`)
-- **Project Status**: AI Authenticity Verification Engine (`apps/api`) implemented and fully operational. Combines domain credibility heuristics (academic TLDs, government portals, verified global scholarship bodies) with heuristic pre-scanning and multi-provider AI evaluation. Classifies scholarships into `VERIFIED`, `UNCERTAIN`, or `SUSPICIOUS`, computes 0–100 confidence scores, extracts detected deadlines/funding types, records detailed scam flags and evidence notes in `ScholarshipSource`, and enforces the mandatory safety rule blocking automated form-filling on any `SUSPICIOUS` scholarship. 98/98 API tests passing green, 9/9 AI package tests passing green, 8/8 static Next.js pages verified.
-- **Next Recommended Task**: `TASK-017: Frontend Scholarship Verification & Results UI`
+- **Current Phase**: Phase 6: AI Eligibility Checker
+- **Active Task**: None (Awaiting user approval to start `TASK-018: Scholarship Requirement Extraction`)
+- **Project Status**: Phase 5 (Scholarship Ingestion & Authenticity Verification) is 100% completed across Backend and Frontend. User-facing verification hub (`apps/web/app/(dashboard)/scholarships`) offers URL ingestion with instant client-side validation, preset testing links, semantic status badges (`VERIFIED` emerald, `UNCERTAIN` amber, `SUSPICIOUS` crimson), tabular confidence score gauge (0–100%), scam risk alert cards, collapsible fraud analyst evidence drawer, mandatory form-filling safety lock, and catalog list with status filters. 98/98 backend API tests passing green, 9/9 AI package tests green, and Next.js 15 web app building cleanly with 9/9 static pages.
+- **Next Recommended Task**: `TASK-018: Scholarship Requirement Extraction`
 
 ---
 
 ## 2. Recently Completed Tasks
+
+### TASK-017: Frontend Scholarship Verification & Results UI
+- **Completed On**: 2026-11-19
+- **What Was Done**:
+  - Extended API client (`apps/web/lib/api.ts`) with typed scholarship methods: `analyzeScholarship`, `verifyScholarship`, `getScholarship`, and `listScholarships`.
+  - Added "Scholarship Verifier" navigation item with `ShieldCheck` icon to dashboard layout (`apps/web/app/(dashboard)/layout.tsx`).
+  - Implemented `VerificationBadge` (`apps/web/components/scholarships/verification-badge.tsx`) rendering high-contrast semantic badges (`VERIFIED`, `UNCERTAIN`, `SUSPICIOUS`, `PENDING`) with tabular scores.
+  - Implemented `ScholarshipAnalyzerForm` (`apps/web/components/scholarships/scholarship-analyzer-form.tsx`) featuring academic URL input, client-side format & private IP checks, quick-fill preset links (Oxford Clarendon, DAAD, Chevening), and collapsible advanced title/provider overrides.
+  - Implemented `VerificationResultCard` (`apps/web/components/scholarships/verification-result-card.tsx`) with hero verdict header, 0–100 confidence progress meter, mandatory safety rule banner (strictly disabling automated form-filling on `SUSPICIOUS` opportunities), institutional corroboration badges, scam flag cards (`FEE_REQUIRED`, `CREDENTIAL_OR_BANKING_REQUEST`), and collapsible analyst evidence drawer.
+  - Implemented `ScholarshipCard` (`apps/web/components/scholarships/scholarship-card.tsx`) for catalog display with provider, domain, status badge, funding type, and deadline.
+  - Built main Scholarship Hub page (`apps/web/app/(dashboard)/scholarships/page.tsx`) with search query filtering, status category tabs (`All`, `Verified`, `Uncertain`, `Suspicious`, `Pending`), active verification result inspection, and responsive empty states.
+- **Verification Results**:
+  - `pnpm --filter @scholaris/web check-types` passed with 0 errors.
+  - `pnpm --filter @scholaris/web build` passed generating **9/9 static pages** cleanly.
+  - `pnpm -r check-types` passed with 0 errors across all 7 workspace packages.
+  - `pnpm --filter @scholaris/api test` passed with **98/98 tests green**.
+  - `pnpm --filter @scholaris/ai test` passed with **9/9 tests green**.
 
 ### TASK-016: AI Authenticity Verification Engine
 - **Completed On**: 2026-11-19
