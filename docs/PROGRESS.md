@@ -7,13 +7,30 @@ This file is the living memory of the **Scholaris** project (formerly ASCAF). It
 ## 1. Current State Summary
 
 - **Current Phase**: Phase 5: Scholarship Ingestion & Authenticity Verification
-- **Active Task**: None (Awaiting user approval to start `TASK-016: AI Authenticity Verification Engine`)
-- **Project Status**: Secure scholarship URL ingestion and enterprise multi-layer SSRF defense engine (`apps/api`) implemented. Enforces protocol whitelisting (HTTP/HTTPS only), web port filtering, DNS resolution verification blocking private/loopback/cloud metadata IP ranges (169.254.169.254, RFC 1918 subnets, IPv6 ULA/loopback), redirect re-validation preventing open-redirect-to-internal pivot attacks, and streaming size limits (2MB). Ingestion creates PostgreSQL `Scholarship` records with status `PENDING` and initial `ScholarshipSource`. 88/88 backend API tests passing green, 9/9 AI package tests green, and Next.js 15 web app building cleanly.
-- **Next Recommended Task**: `TASK-016: AI Authenticity Verification Engine`
+- **Active Task**: None (Awaiting user approval to start `TASK-017: Frontend Scholarship Verification & Results UI`)
+- **Project Status**: AI Authenticity Verification Engine (`apps/api`) implemented and fully operational. Combines domain credibility heuristics (academic TLDs, government portals, verified global scholarship bodies) with heuristic pre-scanning and multi-provider AI evaluation. Classifies scholarships into `VERIFIED`, `UNCERTAIN`, or `SUSPICIOUS`, computes 0–100 confidence scores, extracts detected deadlines/funding types, records detailed scam flags and evidence notes in `ScholarshipSource`, and enforces the mandatory safety rule blocking automated form-filling on any `SUSPICIOUS` scholarship. 98/98 API tests passing green, 9/9 AI package tests passing green, 8/8 static Next.js pages verified.
+- **Next Recommended Task**: `TASK-017: Frontend Scholarship Verification & Results UI`
 
 ---
 
 ## 2. Recently Completed Tasks
+
+### TASK-016: AI Authenticity Verification Engine
+- **Completed On**: 2026-11-19
+- **What Was Done**:
+  - Implemented `evaluateDomainCredibility` (`apps/api/src/modules/scholarships/domain-verifier.ts`) classifying academic TLDs (`.edu`, `.ac.uk`, `.edu.au`), government domains (`.gov`, `.gov.uk`, `.europa.eu`), verified global scholarship providers (DAAD, Fulbright, Chevening, Rhodes, Gates Cambridge, MEXT, CSC, Erasmus+), and general commercial domains.
+  - Built `ScholarshipVerificationService` (`apps/api/src/modules/scholarships/scholarship-verification.service.ts`) with heuristic pre-scanning for red flags (`FEE_REQUIRED`, `CREDENTIAL_OR_BANKING_REQUEST`, `SUSPICIOUS_FREE_EMAIL_CONTACT`, `UNREALISTIC_GUARANTEE`).
+  - Implemented high-precision verification prompt evaluated via `AIAuditService.executeStructuredWithAudit` against `scholarshipVerificationOutputSchema` (Zod), supporting PII anonymization and token/cost audit logging in `AIRequest`.
+  - Implemented mandatory submission safety rule: Any scholarship classified as `SUSPICIOUS` strictly disables automated application form-filling (`isEligibleForAutoFill: false`).
+  - Added endpoint `POST /api/v1/scholarships/:id/verify` in `ScholarshipController` and `scholarshipRoutes` protected by user authentication.
+  - Updates PostgreSQL `Scholarship` (`verificationStatus`, `verificationScore`, `verificationSummary`, `deadline`, `fundingType`) and `ScholarshipSource` (`institutionMatch`, `scamFlagsDetected`, `evidenceNotes`).
+  - Authored automated test suite (`apps/api/test/scholarship-verification.test.ts`) covering 10 test scenarios (domain classification, verified Oxford scholarship, upfront fee scam detection, auto-fill blocking, uncorroborated third-party blog classification, and HTTP endpoints).
+- **Verification Results**:
+  - `pnpm --filter @scholaris/api check-types` passed with 0 errors.
+  - `pnpm --filter @scholaris/api test` passed with **98/98 tests green** (10 verification + 26 ingestion + 13 audit + 2 health + 10 auth + 18 profile + 11 document + 8 worker).
+  - `pnpm --filter @scholaris/ai test` passed with **9/9 tests green**.
+  - `pnpm -r check-types` passed with 0 errors across all 7 workspace packages.
+  - `pnpm --filter @scholaris/web build` passed generating all 8 static pages cleanly.
 
 ### TASK-015: URL Ingestion & SSRF Protection
 - **Completed On**: 2026-11-19

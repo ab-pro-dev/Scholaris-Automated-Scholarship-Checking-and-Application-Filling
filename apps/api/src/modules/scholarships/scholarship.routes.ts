@@ -8,6 +8,7 @@ export const scholarshipRoutes: FastifyPluginAsync = async (server) => {
   server.addHook('preHandler', server.authenticate);
 
   server.post('/api/v1/scholarships/analyze', controller.analyzeScholarship);
+  server.post('/api/v1/scholarships/:id/verify', controller.verifyScholarship);
   server.get('/api/v1/scholarships/:id', controller.getScholarship);
   server.get('/api/v1/scholarships', controller.listScholarships);
 };

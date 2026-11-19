@@ -224,7 +224,7 @@ Tasks must be executed sequentially following their defined dependencies.
   2. AI prompt analyzes page for red flags (upfront fee, phishing, suspicious contact emails).
   3. Generates structured verdict with confidence score and evidence notes in `ScholarshipSources`.
   4. Prevents automatic form-filling on any scholarship marked `SUSPICIOUS`.
-- **Status**: Pending
+- **Status**: Completed
 
 ### TASK-017: Frontend Scholarship Verification & Results UI
 - **Description**: Implement scholarship submission form and detailed authenticity verification result card in `apps/web`.
