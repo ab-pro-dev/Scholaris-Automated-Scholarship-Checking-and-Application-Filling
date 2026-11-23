@@ -13,6 +13,11 @@ import {
   VerificationStatus,
   FundingType,
   ApiResponse,
+  EligibilityStatus,
+  EligibilityRequirementDTO,
+  EligibilityCriterionResult,
+  EligibilityEvaluationSummary,
+  EligibilityResultDTO,
 } from '@scholaris/types';
 import {
   RegisterInput,
@@ -481,6 +486,41 @@ class ApiClient {
     const query = searchParams.toString() ? `?${searchParams.toString()}` : '';
 
     return this.request<ScholarshipWithSources[]>(`/api/v1/scholarships${query}`, {
+      method: 'GET',
+    });
+  }
+
+  // ==========================================
+  // Eligibility Matching & Requirements
+  // ==========================================
+
+  async checkEligibility(id: string): Promise<EligibilityResultDTO> {
+    return this.request<EligibilityResultDTO>(`/api/v1/scholarships/${id}/eligibility/check`, {
+      method: 'POST',
+    });
+  }
+
+  async getEligibility(id: string): Promise<EligibilityResultDTO | null> {
+    try {
+      return await this.request<EligibilityResultDTO>(`/api/v1/scholarships/${id}/eligibility`, {
+        method: 'GET',
+      });
+    } catch (err: any) {
+      if (err instanceof ApiError && err.statusCode === 404) {
+        return null;
+      }
+      throw err;
+    }
+  }
+
+  async extractRequirements(id: string): Promise<any> {
+    return this.request<any>(`/api/v1/scholarships/${id}/requirements/extract`, {
+      method: 'POST',
+    });
+  }
+
+  async getRequirements(id: string): Promise<EligibilityRequirementDTO[]> {
+    return this.request<EligibilityRequirementDTO[]>(`/api/v1/scholarships/${id}/requirements`, {
       method: 'GET',
     });
   }

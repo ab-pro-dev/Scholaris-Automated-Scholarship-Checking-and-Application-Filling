@@ -37,6 +37,20 @@ export default function ProfilePage() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('personal');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get('tab');
+      if (
+        tab &&
+        ['personal', 'education', 'languages', 'achievements', 'experiences'].includes(tab)
+      ) {
+        setActiveTab(tab);
+      }
+    }
+  }, []);
 
   const loadFullProfile = async () => {
     setIsLoading(true);
@@ -95,7 +109,12 @@ export default function ProfilePage() {
       />
 
       {/* Main Tabbed Portfolio Sections */}
-      <Tabs defaultValue="personal" className="space-y-6">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        defaultValue="personal"
+        className="space-y-6"
+      >
         <TabsList className="w-full justify-start overflow-x-auto p-1.5 bg-slate-100/90 border border-slate-200/80 rounded-xl">
           <TabsTrigger value="personal" icon={<User className="w-4 h-4" />}>
             Personal & Citizenship

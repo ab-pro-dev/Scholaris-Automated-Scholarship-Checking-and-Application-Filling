@@ -6,14 +6,30 @@ This file is the living memory of the **Scholaris** project (formerly ASCAF). It
 
 ## 1. Current State Summary
 
-- **Current Phase**: Phase 6: AI Eligibility Checker
-- **Active Task**: None (Awaiting user approval to start `TASK-020: Frontend Eligibility Report UI`)
-- **Project Status**: Phase 5 (Scholarship Ingestion & Authenticity Verification) is 100% completed across Backend and Frontend. In Phase 6 (AI Eligibility Checker), both `TASK-018` (Requirement Extraction) and `TASK-019` (Eligibility Matching & Scoring) are completed and verified. The matching engine deterministically evaluates student GPA, age, degree level prerequisites, nationality/citizenship pools, language benchmarks (IELTS/TOEFL/CEFR), and fields of study against scholarship criteria, generating weighted match scores (0–100%), verified statuses (`ELIGIBLE`, `INELIGIBLE`, `INSUFFICIENT_INFO`), unconfirmed item checklists, and human-readable feedback. 114/114 backend API tests passing green, 9/9 AI package tests green, and Next.js 15 web app building cleanly with 9/9 static pages.
-- **Next Recommended Task**: `TASK-020: Frontend Eligibility Report UI`
+- **Current Phase**: Phase 7: Browser Automation Engine (Playwright)
+- **Active Task**: None (Awaiting user approval to start `TASK-021: Playwright Browser Worker Infrastructure (apps/browser-worker)`)
+- **Project Status**: Phase 6 (AI Eligibility Checker) is 100% completed across Backend and Frontend. Students can view live eligibility reports on any scholarship opportunity with overall match score (0–100%), verified statuses (`ELIGIBLE` emerald, `INELIGIBLE` crimson, `INSUFFICIENT_INFO` amber), interactive criteria checklist with satisfied/unfulfilled/missing filters, student profile vs benchmark comparisons, and one-click direct links to update profile information when data is missing. Strict safety locks disable evaluation on `SUSPICIOUS` opportunities. 114/114 backend API tests passing green, 9/9 AI package tests green, and Next.js 15 web app building cleanly with 9/9 static pages.
+- **Next Recommended Task**: `TASK-021: Playwright Browser Worker Infrastructure (apps/browser-worker)`
 
 ---
 
 ## 2. Recently Completed Tasks
+
+### TASK-020: Frontend Eligibility Report UI
+- **Completed On**: 2026-11-23
+- **What Was Done**:
+  - Extended API client (`apps/web/lib/api.ts`) with typed methods: `checkEligibility`, `getEligibility`, `extractRequirements`, and `getRequirements`.
+  - Built `EligibilityStatusBadge` (`apps/web/components/scholarships/eligibility-status-badge.tsx`) rendering semantic, high-contrast badges for `ELIGIBLE`, `INELIGIBLE`, and `INSUFFICIENT_INFO` with score percentages.
+  - Built `CriteriaChecklist` (`apps/web/components/scholarships/criteria-checklist.tsx`) displaying each requirement with category icons, mandatory vs preferred badges, student profile comparison, natural language explanations, and filter tabs (`All`, `Satisfied`, `Unfulfilled`, `Missing Info`).
+  - Implemented one-click profile navigation: when profile data is missing (`missingData`), displays an actionable link directly opening `/profile?tab=education`, `/profile?tab=languages`, or `/profile?tab=personal`.
+  - Updated `ProfilePage` (`apps/web/app/(dashboard)/profile/page.tsx`) to support client-side tab selection via URL search query (`?tab=...`).
+  - Built `EligibilityReportCard` (`apps/web/components/scholarships/eligibility-report-card.tsx`) featuring hero verdict header, match score gauge, quick statistics grid, missing fields banner, criteria checklist, and re-evaluation trigger.
+  - Enforced defense-in-depth safety lock: strictly disables eligibility evaluation for scholarships classified as `SUSPICIOUS`.
+  - Integrated `EligibilityReportCard` into the Scholarship Hub (`apps/web/app/(dashboard)/scholarships/page.tsx`) and enhanced `ScholarshipCard` with details & eligibility link.
+- **Verification Results**:
+  - `pnpm -r check-types` passed with 0 errors across all 7 workspace packages.
+  - `pnpm --filter @scholaris/api test` passed with **114/114 tests green**.
+  - `pnpm --filter @scholaris/web build` passed with **9/9 static pages** compiled and prerendered cleanly.
 
 ### TASK-019: Eligibility Matching & Scoring Service
 - **Completed On**: 2026-11-19

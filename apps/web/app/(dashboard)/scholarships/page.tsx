@@ -5,6 +5,7 @@ import { VerificationStatus } from '@scholaris/types';
 import { api, ScholarshipWithSources, VerificationResultData } from '../../../lib/api';
 import { ScholarshipAnalyzerForm } from '../../../components/scholarships/scholarship-analyzer-form';
 import { VerificationResultCard } from '../../../components/scholarships/verification-result-card';
+import { EligibilityReportCard } from '../../../components/scholarships/eligibility-report-card';
 import { ScholarshipCard } from '../../../components/scholarships/scholarship-card';
 import { VerificationBadge } from '../../../components/scholarships/verification-badge';
 import { Alert } from '../../../components/ui/alert';
@@ -277,6 +278,13 @@ export default function ScholarshipsPage() {
             verification={activeVerification}
             onReverify={handleReverify}
             isReverifying={isReverifying}
+          />
+
+          {/* Section 2.5: AI Eligibility Report Card */}
+          <EligibilityReportCard
+            scholarshipId={selectedScholarship.id}
+            scholarshipTitle={selectedScholarship.title}
+            verificationStatus={selectedScholarship.verificationStatus}
           />
         </div>
       )}

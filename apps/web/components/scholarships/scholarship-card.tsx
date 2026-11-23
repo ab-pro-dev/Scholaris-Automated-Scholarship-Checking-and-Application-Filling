@@ -58,6 +58,11 @@ export function ScholarshipCard({
           <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
             {scholarship.verificationSummary || 'Scholarship opportunity ingested for analysis.'}
           </p>
+
+          <div className="pt-1 flex items-center gap-1 text-[11px] font-medium text-indigo-600 group-hover:text-indigo-700 transition-colors">
+            <span>View Details & Eligibility Match</span>
+            <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+          </div>
         </div>
 
         <div className="shrink-0 flex sm:flex-col items-end justify-between sm:justify-start gap-2">
