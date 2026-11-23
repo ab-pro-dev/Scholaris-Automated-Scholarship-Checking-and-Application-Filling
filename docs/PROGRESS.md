@@ -7,13 +7,33 @@ This file is the living memory of the **Scholaris** project (formerly ASCAF). It
 ## 1. Current State Summary
 
 - **Current Phase**: Phase 7: Browser Automation Engine (Playwright)
-- **Active Task**: None (Awaiting user approval to start `TASK-021: Playwright Browser Worker Infrastructure (apps/browser-worker)`)
-- **Project Status**: Phase 6 (AI Eligibility Checker) is 100% completed across Backend and Frontend. Students can view live eligibility reports on any scholarship opportunity with overall match score (0–100%), verified statuses (`ELIGIBLE` emerald, `INELIGIBLE` crimson, `INSUFFICIENT_INFO` amber), interactive criteria checklist with satisfied/unfulfilled/missing filters, student profile vs benchmark comparisons, and one-click direct links to update profile information when data is missing. Strict safety locks disable evaluation on `SUSPICIOUS` opportunities. 114/114 backend API tests passing green, 9/9 AI package tests green, and Next.js 15 web app building cleanly with 9/9 static pages.
-- **Next Recommended Task**: `TASK-021: Playwright Browser Worker Infrastructure (apps/browser-worker)`
+- **Active Task**: None (Awaiting user approval to start `TASK-022: Form Detection & DOM Analysis`)
+- **Project Status**: Phase 7 foundation (`TASK-021: Playwright Browser Worker Infrastructure`) is completed and verified. `apps/browser-worker` operates an isolated Chromium browser pool launching ephemeral, incognito contexts with resource controls and an integrated SSRF network firewall intercepting and aborting requests to private IPs (RFC 1918), loopback, cloud metadata (169.254.169.254), and internal database ports. BullMQ automation queue worker processes `VERIFY_URL`, `EXTRACT_FORM`, `FILL_FORM`, and enforces the immutable Mandatory Submission Rule blocking unapproved final submissions with emergency screenshot auditing. 136/136 tests passing green across the monorepo (114 API + 9 AI + 13 Worker), 0 type errors across all 8 packages, and Next.js 15 web app building cleanly with 9/9 static pages.
+- **Next Recommended Task**: `TASK-022: Form Detection & DOM Analysis`
 
 ---
 
 ## 2. Recently Completed Tasks
+
+### TASK-021: Playwright Browser Worker Infrastructure (`apps/browser-worker`)
+- **Completed On**: 2026-11-23
+- **What Was Done**:
+  - Scaffolded `@scholaris/browser-worker` within pnpm workspace (`apps/browser-worker/package.json` & `tsconfig.json`).
+  - Implemented `BrowserPool` (`apps/browser-worker/src/browser/browser-pool.ts`) managing shared Chromium browser instances with resource constraints (`--no-sandbox`, `--disable-dev-shm-usage`, `--disable-gpu`) and generating ephemeral incognito browser contexts with automatic cleanup.
+  - Built SSRF Network Firewall (`apps/browser-worker/src/security/network-firewall.ts`) attaching route interceptors to every Playwright context: blocks loopback (`127.0.0.0/8`, `::1`), cloud metadata (`169.254.169.254`), RFC 1918 private subnets (`10.x`, `172.16.x`, `192.168.x`), internal database/service ports (5432, 6379, 9000, 3001, 22), forbidden suffixes (`.local`, `.internal`, `localhost`), and DNS-resolved private IPs.
+  - Implemented `SubmissionGuard` (`apps/browser-worker/src/security/submission-guard.ts`) enforcing the immutable Mandatory Submission Rule: blocks automated clicks/triggers on final submission actions unless explicit student approval and timestamp are present, throwing `MandatorySubmissionApprovalError`.
+  - Built `ScreenshotService` (`apps/browser-worker/src/storage/screenshot.service.ts`) managing progress and emergency error screenshot storage on disk.
+  - Built BullMQ Queue & Worker (`apps/browser-worker/src/queue/automation.queue.ts` & `automation.worker.ts`) executing browser automation jobs with Prisma status tracking (`AutomationJob`, `BrowserSession`), emergency screenshot capture, and guaranteed context cleanup in `finally` blocks.
+  - Authored automated test suites (`apps/browser-worker/test/`):
+    - `network-firewall.test.ts` (3 tests): Private IP checks, blocked ports, and SSRF route evaluation.
+    - `submission-guard.test.ts` (4 tests): Trigger keyword detection and mandatory authorization enforcement.
+    - `browser-pool.test.ts` (3 tests): Headless Chromium launch, isolated context creation, in-browser firewall interception, and screenshot capture.
+    - `automation-worker.test.ts` (3 tests): Full `VERIFY_URL`, `FILL_FORM`, and unapproved `SUBMIT_APPLICATION` pipeline execution with error screenshot capture.
+- **Verification Results**:
+  - `pnpm --filter @scholaris/browser-worker test` passed with **13/13 tests green**.
+  - `pnpm test` passed with **136/136 tests green** (114 API + 9 AI + 13 Worker).
+  - `pnpm -r check-types` passed with 0 errors across all 8 workspace packages.
+  - `pnpm --filter @scholaris/web build` passed generating **9/9 static pages** cleanly.
 
 ### TASK-020: Frontend Eligibility Report UI
 - **Completed On**: 2026-11-23
