@@ -6,14 +6,41 @@ This file is the living memory of the **Scholaris** project (formerly ASCAF). It
 
 ## 1. Current State Summary
 
-- **Current Phase**: Phase 7: Browser Automation Engine (Playwright)
-- **Active Task**: None (Awaiting user approval to start `TASK-023: Interactive User Login & CAPTCHA Handoff Protocol`)
-- **Project Status**: `TASK-022: Form Detection & DOM Analysis` completed and verified. `apps/browser-worker` features `FormDetectorService` and in-browser DOM extraction identifying interactive form controls (`TEXT`, `TEXTAREA`, `SELECT`, `RADIO`, `CHECKBOX`, `FILE`, `DATE`), extracting semantic labels via `<label for>`, parent `<label>`, `aria-label`, `aria-labelledby`, `<legend>`, placeholders, and formatted names, detecting required markers (`required`, `aria-required`, `*`), detecting multi-step wizard pagination ("Step 1 of 4", `.step-indicator`), and transactionally persisting discovered fields into PostgreSQL `ApplicationField` rows. Monorepo tests: 140/140 green (114 API + 9 AI + 17 Worker), 0 type errors across all 9 packages, and Next.js 15 web app building cleanly with 9/9 static pages.
-- **Next Recommended Task**: `TASK-023: Interactive User Login & CAPTCHA Handoff Protocol`
+- **Current Phase**: Phase 8: Semantic Field Matching & Form Filling
+- **Active Task**: None (Awaiting user approval to start `TASK-024: AI Semantic Field Matching Engine`)
+- **Project Status**: Phase 7 (Browser Automation Engine) is completed and verified across all milestones (`TASK-021`, `TASK-022`, `TASK-023`). `apps/browser-worker` operates Playwright Chromium browser pooling, SSRF network firewall protection, Mandatory Submission Guard, Form Detector & DOM analysis, Challenge Detector for CAPTCHA/bot/login-walls/MFA, and the Handoff Protocol (`PAUSED_FOR_USER`, screenshot capture, and `ACTION_REQUIRED` user notification). External credentials are strictly protected: password fields are never automated or stored. Fastify API provides authenticated session endpoints (`/api/v1/automation/sessions/:id`, `/resume`, `/abort`, and notifications). 154/154 tests passing green across monorepo (121 API + 9 AI + 24 Worker), 0 type errors across all 9 packages, and Next.js 15 web app building cleanly with 9/9 static pages.
+- **Next Recommended Task**: `TASK-024: AI Semantic Field Matching Engine`
 
 ---
 
 ## 2. Recently Completed Tasks
+
+### TASK-023: Interactive User Login & CAPTCHA Handoff Protocol
+- **Completed On**: 2026-11-24
+- **What Was Done**:
+  - Implemented `ChallengeDetector` (`apps/browser-worker/src/security/challenge-detector.ts`):
+    - Detects CAPTCHA and anti-bot verification challenges: Google reCAPTCHA, hCaptcha, Cloudflare Turnstile / Managed Challenges, Arkose Labs FunCaptcha, and generic CAPTCHA elements.
+    - Detects login walls: password inputs (`input[type="password"]`), login forms (`form[action*="login"]`), and portal authentication requests.
+    - Detects Multi-Factor Authentication (MFA / 2FA) verification prompts and OTP inputs.
+    - Strictly enforces external account credential security invariant: `sanitizeFieldValues` strips all password, secret, token, and PIN fields so external credentials are never automated, logged, or stored by Scholaris. Form filling logic explicitly excludes any `input[type="password"]`.
+  - Implemented `HandoffProtocolService` (`apps/browser-worker/src/security/handoff-protocol.service.ts`):
+    - Captures challenge audit screenshots via `ScreenshotService`.
+    - Updates `BrowserSession` status to `PAUSED_FOR_USER` with human-readable error/challenge explanation and screenshot URL.
+    - Updates `AutomationJob` status to `ACTIVE` with challenge logs.
+    - Dispatches an `ACTION_REQUIRED` student `Notification` with instructions directing the student to perform the manual verification in the portal window.
+  - Wired `ChallengeDetector` and `HandoffProtocolService` into BullMQ `processBrowserAutomationJob` in `apps/browser-worker/src/queue/automation.worker.ts`, pausing browser jobs safely without throwing unhandled exceptions.
+  - Implemented Fastify API Automation & Session Management Module (`apps/api/src/modules/automation/`):
+    - `automation.service.ts`: Tenant-isolated session lookup, resume protocol (`PAUSED_FOR_USER` -> `RUNNING` + notification dismissal + BullMQ job re-enqueue), abort protocol (`ERROR` / `FAILED`), and student notification querying/updating.
+    - `automation.controller.ts` & `automation.routes.ts`: Endpoints registered at `/api/v1/automation/sessions/:id`, `/api/v1/automation/sessions/:id/resume`, `/api/v1/automation/sessions/:id/abort`, `/api/v1/automation/notifications`, and `/api/v1/automation/notifications/:id/read`.
+  - Authored automated test suites:
+    - `apps/browser-worker/test/challenge-detector.test.ts` (7 tests): Verified reCAPTCHA, Turnstile, Login Wall, 2FA detection, credential sanitization, handoff protocol state transitions, and worker paused pipeline execution.
+    - `apps/api/test/automation.test.ts` (7 tests): Verified session retrieval, tenant access protection, resume flow, status validation (400 if not paused), abort flow, and notification read toggling.
+- **Verification Results**:
+  - `pnpm --filter @scholaris/browser-worker test` passed with **24/24 tests green**.
+  - `pnpm --filter @scholaris/api test` passed with **121/121 tests green**.
+  - `pnpm test` passed with **154/154 tests green** (121 API + 9 AI + 24 Worker).
+  - `pnpm -r check-types` passed with **0 errors across all 9 packages**.
+  - `pnpm --filter @scholaris/web build` passed cleanly with **9/9 static pages** prerendered.
 
 ### TASK-022: Form Detection & DOM Analysis
 - **Completed On**: 2026-11-24

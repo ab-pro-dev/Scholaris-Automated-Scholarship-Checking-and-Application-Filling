@@ -128,7 +128,7 @@ export class FormDetectorService {
 
         const elements = Array.from(
           document.querySelectorAll<HTMLElement>(
-            'input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]), textarea, select'
+            'input:not([type="hidden"]):not([type="password"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]), textarea, select'
           )
         );
 

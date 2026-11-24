@@ -14,6 +14,8 @@ export interface AutomationJobData {
   userApproved?: boolean;
   userApprovedAt?: string | Date | null;
   fieldValues?: Record<string, string>;
+  isResumed?: boolean;
+  resumedSessionId?: string;
 }
 
 export interface AutomationJobResult {
@@ -24,6 +26,9 @@ export interface AutomationJobResult {
   screenshotPath?: string;
   error?: string;
   blockedRequestsCount: number;
+  isPausedForUser?: boolean;
+  pauseReason?: string;
+  challengeType?: string;
 }
 
 let redisConnection: Redis | null = null;

@@ -120,10 +120,10 @@ export function extractFormFieldsFromDOM(currentPageNumber: number = 1): Extract
     return false;
   };
 
-  // Find form controls: inputs, textareas, selects
+  // Find form controls: inputs, textareas, selects (strictly exclude password and control buttons)
   const elements = Array.from(
     document.querySelectorAll<HTMLElement>(
-      'input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]), textarea, select'
+      'input:not([type="hidden"]):not([type="password"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]), textarea, select'
     )
   );
 

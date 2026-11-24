@@ -10,6 +10,8 @@ import { BrowserPool } from '../browser/browser-pool.js';
 import { ScreenshotService } from '../storage/screenshot.service.js';
 import { SubmissionGuard, MandatorySubmissionApprovalError } from '../security/submission-guard.js';
 import { FormDetectorService } from '../detector/form-detector.service.js';
+import { ChallengeDetector } from '../security/challenge-detector.js';
+import { HandoffProtocolService } from '../security/handoff-protocol.service.js';
 import { env } from '../config/env.js';
 
 export async function processBrowserAutomationJob(
@@ -17,7 +19,9 @@ export async function processBrowserAutomationJob(
   prisma: PrismaClient,
   browserPool: BrowserPool,
   screenshotService: ScreenshotService,
-  formDetector: FormDetectorService = new FormDetectorService(prisma)
+  formDetector: FormDetectorService = new FormDetectorService(prisma),
+  challengeDetector: ChallengeDetector = new ChallengeDetector(),
+  handoffService: HandoffProtocolService = new HandoffProtocolService()
 ): Promise<AutomationJobResult> {
   const { jobId, applicationId, type, targetUrl, userApproved, userApprovedAt } = jobData;
 
@@ -69,7 +73,33 @@ export async function processBrowserAutomationJob(
 
     const pageTitle = await session.page.title();
 
-    // 5. Execute Job Type Action
+    // 5. Detect Blocking Challenges (CAPTCHA, Login Walls, MFA)
+    const challengeResult = await challengeDetector.detectChallenge(session.page);
+    if (challengeResult.detected) {
+      const handoff = await handoffService.initiateHandoff({
+        page: session.page,
+        jobData,
+        browserSessionId,
+        challenge: challengeResult,
+        prisma,
+        screenshotService,
+      });
+
+      return {
+        success: false,
+        pageTitle,
+        detectedFieldsCount: 0,
+        filledFieldsCount: 0,
+        screenshotPath: handoff.screenshotPath,
+        blockedRequestsCount: session.blockedRequests.length,
+        isPausedForUser: true,
+        pauseReason: handoff.reason,
+        challengeType: handoff.challengeType || undefined,
+        error: handoff.reason,
+      };
+    }
+
+    // 6. Execute Job Type Action
     let detectedFieldsCount = 0;
     let filledFieldsCount = 0;
 
@@ -81,13 +111,17 @@ export async function processBrowserAutomationJob(
       );
       detectedFieldsCount = detectionResult.totalFieldsCount;
     } else if (type === 'FILL_FORM') {
-      const inputs = await session.page.$$('input:not([type="hidden"]), select, textarea');
+      const inputs = await session.page.$$('input:not([type="hidden"]):not([type="password"]), select, textarea');
       detectedFieldsCount = inputs.length;
 
       if (jobData.fieldValues) {
-        for (const [key, val] of Object.entries(jobData.fieldValues)) {
+        // Enforce safety invariant: strip any password/credential keys
+        const sanitizedFields = challengeDetector.sanitizeFieldValues(jobData.fieldValues);
+
+        for (const [key, val] of Object.entries(sanitizedFields)) {
           try {
-            const el = await session.page.$(`[name="${key}"], #${key}`);
+            // Refuse to fill password fields under any circumstance
+            const el = await session.page.$(`[name="${key}"]:not([type="password"]), #${key}:not([type="password"])`);
             if (el) {
               await el.fill(val);
               filledFieldsCount++;

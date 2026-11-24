@@ -318,12 +318,38 @@ export interface ApplicationDTO {
 // Browser Worker & Jobs
 // ==========================================
 
+export type ChallengeType =
+  | 'CAPTCHA'
+  | 'LOGIN_REQUIRED'
+  | 'TWO_FACTOR_AUTH'
+  | 'BOT_DETECTION';
+
+export interface ChallengeDetectionResult {
+  detected: boolean;
+  challengeType: ChallengeType | null;
+  reason: string | null;
+  selectorFound: string | null;
+  instructions: string;
+}
+
 export type BrowserSessionStatus =
   | 'INITIALIZING'
   | 'RUNNING'
   | 'PAUSED_FOR_USER'
   | 'COMPLETED'
   | 'ERROR';
+
+export interface BrowserSessionDTO {
+  id: string;
+  applicationId?: string | null;
+  jobId?: string | null;
+  workerId: string;
+  sessionStatus: BrowserSessionStatus;
+  lastScreenshotUrl?: string | null;
+  errorMessage?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export type AutomationJobType =
   | 'VERIFY_URL'
@@ -341,6 +367,23 @@ export interface AutomationJobDTO {
   status: AutomationJobStatus;
   attempts: number;
   errorLog?: string | null;
+}
+
+// ==========================================
+// Notifications
+// ==========================================
+
+export type NotificationType = 'INFO' | 'WARNING' | 'ACTION_REQUIRED' | 'SUCCESS';
+
+export interface NotificationDTO {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  type: NotificationType;
+  isRead: boolean;
+  linkUrl?: string | null;
+  createdAt: string;
 }
 
 // ==========================================

@@ -233,3 +233,14 @@ export const approveApplicationSchema = z.object({
 });
 
 export type ApproveApplicationInput = z.infer<typeof approveApplicationSchema>;
+
+// ==========================================
+// Automation & Session Schemas
+// ==========================================
+
+export const resumeSessionSchema = z.object({
+  userConfirmed: z.boolean().default(true),
+  notes: z.string().max(500).optional(),
+});
+
+export type ResumeSessionInput = z.infer<typeof resumeSessionSchema>;

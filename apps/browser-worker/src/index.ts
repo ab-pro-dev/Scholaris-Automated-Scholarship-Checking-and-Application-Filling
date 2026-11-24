@@ -6,6 +6,8 @@ import { createBrowserWorker } from './queue/automation.worker.js';
 export * from './config/env.js';
 export * from './security/network-firewall.js';
 export * from './security/submission-guard.js';
+export * from './security/challenge-detector.js';
+export * from './security/handoff-protocol.service.js';
 export * from './storage/screenshot.service.js';
 export * from './browser/browser-pool.js';
 export * from './detector/dom-extractor.js';
