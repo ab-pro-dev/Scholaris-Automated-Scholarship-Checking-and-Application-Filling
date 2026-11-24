@@ -12,6 +12,8 @@ export * from './storage/screenshot.service.js';
 export * from './browser/browser-pool.js';
 export * from './detector/dom-extractor.js';
 export * from './detector/form-detector.service.js';
+export * from './automation/file-uploader.js';
+export * from './automation/form-filler.js';
 export * from './queue/automation.queue.js';
 export * from './queue/automation.worker.js';
 

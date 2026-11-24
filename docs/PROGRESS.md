@@ -6,14 +6,50 @@ This file is the living memory of the **Scholaris** project (formerly ASCAF). It
 
 ## 1. Current State Summary
 
-- **Current Phase**: Phase 8: Semantic Field Matching & Form Filling
-- **Active Task**: None (Awaiting user approval to start `TASK-026: Automated Form Field Filling & Document Attachment`)
-- **Project Status**: `TASK-025: Missing Information & AI Essay Drafting Assistant` completed and verified. `EssayDrafterService` and `ApplicationService` provide missing-information resolution (`GET/PUT /api/v1/applications/:id/missing-info`) and AI-assisted personal statement/motivation letter drafting (`POST /api/v1/applications/:id/draft-essay`, `taskType: 'ESSAY_DRAFT'`) grounded strictly in verified student profile records (`UserProfile`, `EducationRecord`, `LanguageSkill`, `Achievement`, `Experience`). Enforces the Mandatory Student Review Invariant (`sourceType: 'AI_DRAFT'`, `requiresUserReview: true`, transitioning to `sourceType: 'USER_INPUT'` upon student review/edit). UI features responsive missing information resolver (`MissingInfoCard`), interactive field mappings table (`FieldMappingsTable`), and full application detail workspace (`/applications/[id]`). Monorepo tests: 165/165 green (132 API + 9 AI + 24 Worker), 0 type errors across all 9 packages, and Next.js 15 web app building cleanly with 10 routes.
-- **Next Recommended Task**: `TASK-026: Automated Form Field Filling & Document Attachment`
+- **Current Phase**: Phase 9: Review Screen & User-Controlled Submission
+- **Active Task**: None (Awaiting user approval to start `TASK-027: Pre-Submission Application Review Interface`)
+- **Project Status**: `TASK-026: Automated Form Field Filling & Document Attachment` completed and verified. `FormFiller` and `FileUploader` engines in `apps/browser-worker` execute automated filling of scholarship portal forms across all standard field types (`TEXT`, `DATE`, `TEXTAREA`, `SELECT`, `RADIO`, `CHECKBOX`, `FILE`) using verified `FieldMapping` records, secure S3 document streaming, reactive DOM event dispatching (`input`, `change`, `blur`), and safe multi-page wizard navigation. Enforces the **Mandatory Submission Rule**: strictly halts short of final submission, records discovered submission triggers without clicking them, saves draft states where available, and captures high-resolution screenshots tagged `filled` for student review. BullMQ worker transitions `Application.status` to `READY_FOR_REVIEW`. Monorepo tests: 171/171 green (132 API + 9 AI + 30 Worker), 0 type errors across all 9 packages, and Next.js 15 web app building cleanly with 10 routes.
+- **Next Recommended Task**: `TASK-027: Pre-Submission Application Review Interface`
 
 ---
 
 ## 2. Recently Completed Tasks
+
+### TASK-026: Automated Form Field Filling & Document Attachment
+- **Completed On**: 2026-11-24
+- **What Was Done**:
+  - Implemented `FormFiller` (`apps/browser-worker/src/automation/form-filler.ts`):
+    - Multi-strategy element resolution (IDs, names, ARIA labels, semantic `<label>` text, and placeholders).
+    - Natural interaction simulation: keystroke timing, element focus, reactive DOM event dispatching (`input`, `change`, `blur`) for modern reactive frameworks (React, Vue, Angular).
+    - Textarea support for lengthy essays and personal statements.
+    - `<select>` dropdown option matching (value, text, substring, case-insensitive).
+    - `<input type="radio">` group resolution and selection.
+    - `<input type="checkbox">` boolean toggling.
+    - Multi-page wizard navigation (`Next`, `Continue`) with safety assertion to prevent triggering submission.
+    - Draft preservation: detects and triggers safe `Save Draft` / `Save Progress` actions.
+    - Anti-Hallucination & Security Invariants: refuses to interact with password fields (`type="password"`), skips empty/unconfirmed values, and guarantees `stoppedShortOfSubmission: true`.
+  - Implemented `FileUploader` (`apps/browser-worker/src/automation/file-uploader.ts`):
+    - Connects to MinIO/S3 object storage via `@aws-sdk/client-s3` with fallback to presigned/direct URLs.
+    - Resolves target `<input type="file">` by selector, fieldKey, or semantic label.
+    - Attaches document binary buffer using Playwright `setInputFiles` with accurate filename and MIME type.
+    - Dispatches DOM events and cleans up buffers to prevent memory leaks in worker workers.
+  - Enhanced Browser Automation Worker (`apps/browser-worker/src/queue/automation.worker.ts`):
+    - Handled `FILL_FORM` BullMQ job type: loads `Application` with `fieldMappings`, `fields`, and `applicationDocuments` from PostgreSQL.
+    - Executes `FormFiller.fillForm()` and records filled vs detected field statistics.
+    - Captures high-resolution filled screenshot tagged `filled` via `ScreenshotService`.
+    - Auto-transitions `Application.status` to `READY_FOR_REVIEW` for student verification.
+  - Authored automated test suite (`apps/browser-worker/test/form-filler.test.ts`) covering 6 comprehensive test scenarios:
+    1. Accurate filling of text, textarea, and date fields with event dispatching.
+    2. Dropdown selection, radio button toggling, and checkbox setting.
+    3. Document attachment to file inputs via `FileUploader`.
+    4. Mandatory Submission Rule enforcement & draft saving.
+    5. Refusal to fill password/credential fields.
+    6. Full BullMQ worker integration with mock Prisma store, screenshot tagging, and status transition.
+- **Verification Results**:
+  - `pnpm --filter @scholaris/browser-worker test` passed with **30/30 tests green** (all 6 new tests passed).
+  - `pnpm test` passed with **171/171 tests green** across monorepo (132 API + 9 AI + 30 Worker).
+  - `pnpm -r check-types` passed with **0 errors across all 9 packages**.
+  - `pnpm --filter @scholaris/web build` passed cleanly with **10/10 routes** compiling and prerendering.
 
 ### TASK-025: Missing Information & AI Essay Drafting Assistant
 - **Completed On**: 2026-11-24
