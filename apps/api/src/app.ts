@@ -16,6 +16,7 @@ import { documentRoutes } from './modules/documents/document.routes.js';
 import { aiRoutes } from './modules/ai/ai.routes.js';
 import { scholarshipRoutes } from './modules/scholarships/scholarship.routes.js';
 import { automationRoutes } from './modules/automation/automation.routes.js';
+import { applicationRoutes } from './modules/applications/application.routes.js';
 
 export async function buildApp(opts: FastifyServerOptions = {}): Promise<FastifyInstance> {
   const app = Fastify({
@@ -110,6 +111,7 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
   await app.register(aiRoutes);
   await app.register(scholarshipRoutes);
   await app.register(automationRoutes);
+  await app.register(applicationRoutes);
 
   return app;
 }

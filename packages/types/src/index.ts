@@ -314,6 +314,17 @@ export interface ApplicationDTO {
   updatedAt: string;
 }
 
+export interface FieldMatchingSummary {
+  applicationId: string;
+  totalFieldsCount: number;
+  matchedFieldsCount: number;
+  missingFieldsCount: number;
+  confidenceAverage: number;
+  mappings: FieldMappingDTO[];
+  missingInformation: MissingInformationDTO[];
+  status: ApplicationStatus;
+}
+
 // ==========================================
 // Browser Worker & Jobs
 // ==========================================

@@ -7,13 +7,41 @@ This file is the living memory of the **Scholaris** project (formerly ASCAF). It
 ## 1. Current State Summary
 
 - **Current Phase**: Phase 8: Semantic Field Matching & Form Filling
-- **Active Task**: None (Awaiting user approval to start `TASK-024: AI Semantic Field Matching Engine`)
-- **Project Status**: Phase 7 (Browser Automation Engine) is completed and verified across all milestones (`TASK-021`, `TASK-022`, `TASK-023`). `apps/browser-worker` operates Playwright Chromium browser pooling, SSRF network firewall protection, Mandatory Submission Guard, Form Detector & DOM analysis, Challenge Detector for CAPTCHA/bot/login-walls/MFA, and the Handoff Protocol (`PAUSED_FOR_USER`, screenshot capture, and `ACTION_REQUIRED` user notification). External credentials are strictly protected: password fields are never automated or stored. Fastify API provides authenticated session endpoints (`/api/v1/automation/sessions/:id`, `/resume`, `/abort`, and notifications). 154/154 tests passing green across monorepo (121 API + 9 AI + 24 Worker), 0 type errors across all 9 packages, and Next.js 15 web app building cleanly with 9/9 static pages.
-- **Next Recommended Task**: `TASK-024: AI Semantic Field Matching Engine`
+- **Active Task**: None (Awaiting user approval to start `TASK-025: Missing Information & AI Essay Drafting Assistant`)
+- **Project Status**: `TASK-024: AI Semantic Field Matching Engine` completed and verified. `FieldMatcherService` and `ApplicationService` provide hybrid deterministic and AI-powered semantic schema mapping (`taskType: 'MATCHING'`) between discovered scholarship application fields and student profile data (`UserProfile`, `EducationRecord`, `LanguageSkill`, `Achievement`, `Experience`) as well as uploaded documents (`Document`). Generates confidence scores (0.0 – 1.0) with explicit source attribution (`PROFILE`, `DOCUMENT`, `USER_INPUT`, `AI_DRAFT`), option alignment for select/radio elements, anti-hallucination guarantees (never inventing facts), and automatic `MissingInformation` detection (`FIELD_VALUE`, `DOCUMENT_UPLOAD`, `ESSAY_RESPONSE`) with student edit and resolution capabilities. Monorepo tests: 160/160 green (127 API + 9 AI + 24 Worker), 0 type errors across all 9 packages, and Next.js 15 web app building cleanly with 9/9 static pages.
+- **Next Recommended Task**: `TASK-025: Missing Information & AI Essay Drafting Assistant`
 
 ---
 
 ## 2. Recently Completed Tasks
+
+### TASK-024: AI Semantic Field Matching Engine
+- **Completed On**: 2026-11-24
+- **What Was Done**:
+  - Implemented `FieldMatcherService` (`apps/api/src/modules/applications/field-matcher.service.ts`):
+    - Hybrid deterministic and AI semantic matching engine comparing detected scholarship form fields against student profile data and document vault.
+    - Rule-based pre-matching for standard personal attributes (first/last/full name, date of birth, gender, nationality, country of residence, city, phone, GPA, major, degree level, institution, and standard documents).
+    - Normalized option value matching for `<select>` dropdowns and `<input type="radio">` controls.
+    - AI Semantic Matching via `@scholaris/ai` (`AIAuditService` with `taskType: 'MATCHING'`) for complex, unstructured, or ambiguous scholarship portal questions.
+    - Strict Anti-Hallucination Invariant: If data is missing or unconfirmed in student records, mapped value is kept empty/null, confidence is set to 0.0, and the item is flagged as missing.
+    - Automatic `MissingInformation` generation for unmapped mandatory fields (`isRequired: true`), categorizing them into `FIELD_VALUE`, `DOCUMENT_UPLOAD`, or `ESSAY_RESPONSE`.
+    - Safety rule: Blocked application creation and field matching on scholarships classified as `SUSPICIOUS` (`SCHOLARSHIP_SUSPICIOUS`).
+    - Transactional persistence in PostgreSQL `FieldMapping` and `MissingInformation` tables, transitioning `Application.status` to `WAITING_FOR_INPUT` or `READY_FOR_REVIEW`.
+  - Implemented `ApplicationService` and controller (`apps/api/src/modules/applications/`):
+    - `POST /api/v1/applications`: Creates or returns existing application with defense-in-depth safety checks.
+    - `GET /api/v1/applications/:id`: Retrieves application with fields, mappings, and missing information.
+    - `GET /api/v1/applications`: Lists all student applications with quick statistics.
+    - `POST /api/v1/applications/:id/match-fields`: Executes AI semantic field matching with full audit trail.
+    - `GET /api/v1/applications/:id/field-mappings`: Retrieves field mappings and unresolved missing information count.
+    - `PATCH /api/v1/applications/:id/field-mappings`: Allows manual student edits with `isEditedByUser: true`, `sourceType: 'USER_INPUT'`, and 1.0 confidence.
+    - `POST /api/v1/applications/:id/missing-info/resolve`: Resolves missing information items with student responses, updates field mappings, and transitions application status to `READY_FOR_REVIEW` when all items are resolved.
+  - Registered `applicationRoutes` in Fastify server (`apps/api/src/app.ts`).
+  - Authored automated test suite (`apps/api/test/field-matcher.test.ts`) covering 6 comprehensive test scenarios (deterministic matching, document matching, missing info categorization, anti-hallucination verification, suspicious scholarship safety blocks, student manual edits, missing info resolution, and tenant isolation).
+- **Verification Results**:
+  - `pnpm --filter @scholaris/api test test/field-matcher.test.ts` passed with **6/6 tests green**.
+  - `pnpm test` passed with **160/160 tests green** across monorepo (127 API + 9 AI + 24 Worker).
+  - `pnpm -r check-types` passed with **0 errors across all 9 packages**.
+  - `pnpm --filter @scholaris/web build` passed cleanly with **9/9 static pages** prerendered.
 
 ### TASK-023: Interactive User Login & CAPTCHA Handoff Protocol
 - **Completed On**: 2026-11-24

@@ -1,0 +1,19 @@
+import { FastifyPluginAsync } from 'fastify';
+import { ApplicationController } from './application.controller.js';
+
+export const applicationRoutes: FastifyPluginAsync = async (server) => {
+  const controller = new ApplicationController();
+
+  // All application operations require an authenticated student user
+  server.addHook('preHandler', server.authenticate);
+
+  server.post('/api/v1/applications', controller.createApplication);
+  server.get('/api/v1/applications', controller.listApplications);
+  server.get('/api/v1/applications/:id', controller.getApplication);
+
+  // Field Matching & Missing Info
+  server.post('/api/v1/applications/:id/match-fields', controller.matchFields);
+  server.get('/api/v1/applications/:id/field-mappings', controller.getFieldMappings);
+  server.patch('/api/v1/applications/:id/field-mappings', controller.updateFieldMapping);
+  server.post('/api/v1/applications/:id/missing-info/resolve', controller.resolveMissingInfo);
+};
