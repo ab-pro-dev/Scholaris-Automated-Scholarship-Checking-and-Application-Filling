@@ -5,6 +5,7 @@ import {
   ReviewSection,
   ReviewFieldItem,
   ReviewDocumentItem,
+  SubmissionStatusDTO,
 } from '@scholaris/types';
 import {
   CreateApplicationInput,
@@ -12,7 +13,10 @@ import {
   ResolveMissingInfoInput,
   UpdateMissingInfoInput,
   BulkUpdateMissingInfoInput,
+  ApproveApplicationInput,
+  SubmitApplicationInput,
 } from '@scholaris/validation';
+import { enqueueAutomationJob } from '../automation/automation.queue.js';
 
 export class ApplicationService {
   constructor(private readonly prisma: PrismaClient) {}
@@ -474,6 +478,157 @@ export class ApplicationService {
       resolvedItem: updated,
       remainingMissingCount: remainingCount,
       isAllResolved: remainingCount === 0,
+    };
+  }
+
+  /**
+   * Records explicit digital student authorization for an application (TASK-028).
+   * Enforces the Mandatory Submission Rule: applications must not be submitted without this record.
+   */
+  async approveApplication(
+    userId: string,
+    applicationId: string,
+    input: ApproveApplicationInput
+  ) {
+    const application = await this.getApplication(userId, applicationId);
+
+    // Verify all mandatory missing information items are resolved
+    const unresolvedCount = await this.prisma.missingInformation.count({
+      where: {
+        applicationId,
+        isResolved: false,
+      },
+    });
+
+    if (unresolvedCount > 0) {
+      throw new AppError(
+        `Cannot authorize submission: ${unresolvedCount} mandatory requirements remain unresolved.`,
+        400,
+        'UNRESOLVED_REQUIREMENTS'
+      );
+    }
+
+    const approvedAt = new Date();
+    const notes = input.consentSignature
+      ? `Digitally signed by student: ${input.consentSignature} at ${approvedAt.toISOString()}`
+      : `Student explicitly consented to submission at ${approvedAt.toISOString()}`;
+
+    const updated = await this.prisma.application.update({
+      where: { id: applicationId },
+      data: {
+        userApprovedAt: approvedAt,
+        status: 'AWAITING_APPROVAL',
+        notes: application.notes ? `${application.notes}\n${notes}` : notes,
+      },
+      include: {
+        scholarship: true,
+      },
+    });
+
+    return {
+      applicationId: updated.id,
+      status: updated.status,
+      userApprovedAt: updated.userApprovedAt?.toISOString() || null,
+      notes: updated.notes,
+    };
+  }
+
+  /**
+   * Initiates the automated final submission via browser worker (TASK-028).
+   * Strictly enforces the Mandatory Submission Rule: throws if user has not authorized submission.
+   */
+  async submitApplication(userId: string, applicationId: string) {
+    const application = await this.getApplication(userId, applicationId);
+
+    // MANDATORY SUBMISSION INVARIANT
+    if (!application.userApprovedAt) {
+      throw new ForbiddenError(
+        'Automated final application submission blocked: Explicit student authorization required before submitting.'
+      );
+    }
+
+    // Safety rule: Block submission on suspicious scholarships
+    if (application.scholarship.verificationStatus === 'SUSPICIOUS') {
+      throw new AppError(
+        'Submission blocked: Scholarship is flagged as SUSPICIOUS. Submissions are halted for student safety.',
+        400,
+        'SCHOLARSHIP_SUSPICIOUS'
+      );
+    }
+
+    const targetUrl = application.scholarship.applicationUrl || application.scholarship.websiteUrl;
+
+    // 1. Create AutomationJob in PostgreSQL
+    const job = await this.prisma.automationJob.create({
+      data: {
+        applicationId,
+        type: 'SUBMIT_APPLICATION',
+        status: 'QUEUED',
+      },
+    });
+
+    // 2. Transition application status to SUBMITTING
+    await this.prisma.application.update({
+      where: { id: applicationId },
+      data: {
+        status: 'SUBMITTING',
+      },
+    });
+
+    // 3. Dispatch job to BullMQ queue
+    await enqueueAutomationJob({
+      jobId: job.id,
+      applicationId,
+      scholarshipId: application.scholarshipId,
+      type: 'SUBMIT_APPLICATION',
+      targetUrl,
+      userId,
+      userApproved: true,
+      userApprovedAt: application.userApprovedAt.toISOString(),
+    });
+
+    return {
+      success: true,
+      jobId: job.id,
+      status: 'SUBMITTING',
+      message: 'Application submission job dispatched to secure browser worker.',
+    };
+  }
+
+  /**
+   * Retrieves live submission status and proof receipt for an application (TASK-028).
+   */
+  async getSubmissionStatus(userId: string, applicationId: string): Promise<SubmissionStatusDTO> {
+    const application = await this.getApplication(userId, applicationId);
+
+    // Get latest submission automation job
+    const latestJob = await this.prisma.automationJob.findFirst({
+      where: {
+        applicationId,
+        type: 'SUBMIT_APPLICATION',
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Extract confirmation code from application notes if present
+    let confirmationCode: string | null = null;
+    if (application.notes) {
+      const match = application.notes.match(/(?:reference|confirmation|code|ref):\s*([A-Za-z0-9_-]+)/i);
+      if (match) {
+        confirmationCode = match[1];
+      }
+    }
+
+    return {
+      applicationId: application.id,
+      status: application.status,
+      userApprovedAt: application.userApprovedAt?.toISOString() || null,
+      submittedAt: application.submittedAt?.toISOString() || null,
+      submissionProofUrl: application.submissionProofUrl,
+      confirmationCode,
+      jobId: latestJob?.id || null,
+      jobStatus: latestJob?.status || null,
+      error: latestJob?.errorLog || null,
     };
   }
 }

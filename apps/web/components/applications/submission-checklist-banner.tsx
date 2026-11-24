@@ -18,6 +18,7 @@ interface SubmissionChecklistBannerProps {
     canAuthorizeSubmission: boolean;
     completionPercentage: number;
   };
+  status?: string;
   unresolvedItems?: Array<{
     id: string;
     prompt: string;
@@ -26,14 +27,60 @@ interface SubmissionChecklistBannerProps {
   }>;
   onResolveClick?: () => void;
   onAuthorizeClick?: () => void;
+  onViewReceiptClick?: () => void;
 }
 
 export function SubmissionChecklistBanner({
   summary,
+  status,
   unresolvedItems = [],
   onResolveClick,
   onAuthorizeClick,
+  onViewReceiptClick,
 }: SubmissionChecklistBannerProps) {
+  if (status === 'SUBMITTED') {
+    return (
+      <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 shadow-xs transition-all">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-emerald-600 border border-emerald-700 flex items-center justify-center shrink-0 text-white shadow-xs">
+              <CheckCircle2 className="w-6 h-6" />
+            </div>
+            <div className="space-y-1 max-w-2xl">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-200 text-emerald-950">
+                  Status: Submitted
+                </span>
+                <span className="text-xs text-emerald-800 font-medium">
+                  Verified & Executed
+                </span>
+              </div>
+              <h2 className="text-lg font-bold text-emerald-950">
+                Application Successfully Submitted to Provider Portal
+              </h2>
+              <p className="text-sm text-emerald-800">
+                This application has been formally submitted under your student authorization. Confirmation screenshot proof and reference details are archived.
+              </p>
+            </div>
+          </div>
+
+          <div className="shrink-0 flex items-center gap-3">
+            {onViewReceiptClick && (
+              <button
+                type="button"
+                onClick={onViewReceiptClick}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-700 text-white rounded-xl text-sm font-semibold hover:bg-emerald-800 transition-colors shadow-xs"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                View Submission Receipt & Proof
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const isReady = summary.unresolvedCount === 0;
 
   if (isReady) {

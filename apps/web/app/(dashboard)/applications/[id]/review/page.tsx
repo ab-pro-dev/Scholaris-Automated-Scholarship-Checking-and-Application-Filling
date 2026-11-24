@@ -23,6 +23,8 @@ import { SubmissionChecklistBanner } from '@/components/applications/submission-
 import { ReviewFieldRow } from '@/components/applications/review-field-row';
 import { ReviewDocumentsList } from '@/components/applications/review-documents-list';
 import { PortalPreviewModal } from '@/components/applications/portal-preview-modal';
+import { AuthorizationModal } from '@/components/applications/authorization-modal';
+import { SubmissionProgressModal } from '@/components/applications/submission-progress-modal';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -36,6 +38,8 @@ export default function ApplicationReviewPage({ params }: PageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isScreenshotOpen, setIsScreenshotOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isProgressModalOpen, setIsProgressModalOpen] = useState(false);
 
   const loadData = async () => {
     try {
@@ -56,6 +60,21 @@ export default function ApplicationReviewPage({ params }: PageProps) {
 
   const handleSaveField = async (fieldId: string, newValue: string) => {
     await api.updateFieldMapping(applicationId, fieldId, newValue);
+    await loadData();
+  };
+
+  const handleAuthorizeAndSubmit = async (consentData: {
+    signature: string;
+    consentHash: string;
+  }) => {
+    await api.approveApplication(applicationId, {
+      consentConfirmed: true,
+      consentSignature: consentData.signature,
+      consentHash: consentData.consentHash,
+    });
+    setIsAuthModalOpen(false);
+    setIsProgressModalOpen(true);
+    await api.submitApplication(applicationId, { confirmed: true });
     await loadData();
   };
 
@@ -139,6 +158,26 @@ export default function ApplicationReviewPage({ params }: PageProps) {
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
+          {review.status === 'SUBMITTED' ? (
+            <button
+              type="button"
+              onClick={() => setIsProgressModalOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-colors shadow-2xs"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              Submission Receipt
+            </button>
+          ) : summary.canAuthorizeSubmission ? (
+            <button
+              type="button"
+              onClick={() => setIsAuthModalOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-semibold hover:bg-slate-800 transition-colors shadow-xs"
+            >
+              <Lock className="w-4 h-4 text-emerald-400" />
+              Authorize Submission
+            </button>
+          ) : null}
+
           {review.previewScreenshotUrl && (
             <button
               type="button"
@@ -164,11 +203,11 @@ export default function ApplicationReviewPage({ params }: PageProps) {
       {/* Submission Validation Checklist Banner */}
       <SubmissionChecklistBanner
         summary={summary}
+        status={review.status}
         unresolvedItems={unresolvedMissingItems}
         onResolveClick={() => router.push(`/applications/${applicationId}`)}
-        onAuthorizeClick={() => {
-          alert('Submission Authorization Gate will be activated in TASK-028.');
-        }}
+        onAuthorizeClick={() => setIsAuthModalOpen(true)}
+        onViewReceiptClick={() => setIsProgressModalOpen(true)}
       />
 
       {/* Layout Grid */}
@@ -320,6 +359,33 @@ export default function ApplicationReviewPage({ params }: PageProps) {
         screenshotUrl={review.previewScreenshotUrl || null}
         scholarshipTitle={scholarship.title}
         portalUrl={scholarship.websiteUrl || scholarship.applicationUrl || null}
+      />
+
+      {/* Mandatory Submission Rule Authorization Gate Modal */}
+      <AuthorizationModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onAuthorized={handleAuthorizeAndSubmit}
+        scholarshipTitle={scholarship.title}
+        providerName={scholarship.providerName}
+        deadline={scholarship.deadline}
+        totalFieldsCount={summary.totalFieldsCount}
+        documentsCount={attachedDocuments.length}
+      />
+
+      {/* Live Submission Execution Progress & Receipt Modal */}
+      <SubmissionProgressModal
+        isOpen={isProgressModalOpen}
+        applicationId={applicationId}
+        scholarshipTitle={scholarship.title}
+        providerName={scholarship.providerName}
+        onClose={() => {
+          setIsProgressModalOpen(false);
+          loadData();
+        }}
+        onCompleted={() => {
+          loadData();
+        }}
       />
     </div>
   );

@@ -341,6 +341,19 @@ export interface ApplicationDTO {
   updatedAt: string;
 }
 
+export interface SubmissionStatusDTO {
+  applicationId: string;
+  status: ApplicationStatus;
+  userApprovedAt: string | null;
+  submittedAt: string | null;
+  submissionProofUrl: string | null;
+  confirmationCode?: string | null;
+  jobId?: string | null;
+  jobStatus?: string | null;
+  error?: string | null;
+  errorLog?: string | null;
+}
+
 export interface FieldMatchingSummary {
   applicationId: string;
   totalFieldsCount: number;

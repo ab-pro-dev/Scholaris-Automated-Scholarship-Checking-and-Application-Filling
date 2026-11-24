@@ -6,6 +6,8 @@ import {
   updateMissingInfoSchema,
   bulkUpdateMissingInfoSchema,
   draftEssaySchema,
+  approveApplicationSchema,
+  submitApplicationSchema,
 } from '@scholaris/validation';
 import { ApplicationService } from './application.service.js';
 import { FieldMatcherService } from './field-matcher.service.js';
@@ -235,6 +237,55 @@ export class ApplicationController {
     const essayService = this.getEssayService(request);
 
     const result = await essayService.draftEssay(userId, id, input);
+    return reply.status(200).send({
+      success: true,
+      data: result,
+    });
+  };
+
+  approveApplication = async (
+    request: FastifyRequest<{ Params: { id: string }; Body: unknown }>,
+    reply: FastifyReply
+  ) => {
+    const userId = request.user.sub;
+    const { id } = request.params;
+    const input = approveApplicationSchema.parse(request.body);
+    const service = this.getAppService(request);
+
+    const result = await service.approveApplication(userId, id, input);
+    return reply.status(200).send({
+      success: true,
+      data: result,
+    });
+  };
+
+  submitApplication = async (
+    request: FastifyRequest<{ Params: { id: string }; Body?: unknown }>,
+    reply: FastifyReply
+  ) => {
+    const userId = request.user.sub;
+    const { id } = request.params;
+    if (request.body) {
+      submitApplicationSchema.parse(request.body);
+    }
+    const service = this.getAppService(request);
+
+    const result = await service.submitApplication(userId, id);
+    return reply.status(200).send({
+      success: true,
+      data: result,
+    });
+  };
+
+  getSubmissionStatus = async (
+    request: FastifyRequest<{ Params: { id: string } }>,
+    reply: FastifyReply
+  ) => {
+    const userId = request.user.sub;
+    const { id } = request.params;
+    const service = this.getAppService(request);
+
+    const result = await service.getSubmissionStatus(userId, id);
     return reply.status(200).send({
       success: true,
       data: result,

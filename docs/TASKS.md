@@ -362,7 +362,7 @@ Tasks must be executed sequentially following their defined dependencies.
   2. `POST /api/v1/applications/:id/submit` instructs browser worker to click final submit button only after explicit approval is verified.
   3. Worker captures submission confirmation page screenshot and verification evidence.
   4. Application status updates to `SUBMITTED` or `SUBMISSION_FAILED` with real evidence.
-- **Status**: Pending
+- **Status**: Completed
 
 ---
 

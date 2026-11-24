@@ -6,14 +6,47 @@ This file is the living memory of the **Scholaris** project (formerly ASCAF). It
 
 ## 1. Current State Summary
 
-- **Current Phase**: Phase 9: Review Screen & User-Controlled Submission
-- **Active Task**: None (Awaiting user approval to start `TASK-028: Explicit User Authorization & Submission Execution`)
-- **Project Status**: `TASK-027: Pre-Submission Application Review Interface` completed and verified. `ApplicationService` provides comprehensive review aggregation (`GET /api/v1/applications/:id/review`), grouping form fields by portal page/section with explicit source attribution (`PROFILE`, `DOCUMENT`, `USER_INPUT`, `AI_DRAFT`), real-time in-place editing (`PATCH /api/v1/applications/:id/field-mappings`), attached document listing with vault downloads, live form preview screenshot thumbnail from the browser worker, and submission readiness gating (`canAuthorizeSubmission: true` only when 100% of mandatory items are resolved). Frontend features responsive review page (`/applications/[id]/review`), `SubmissionChecklistBanner`, `ReviewFieldRow`, `ReviewDocumentsList`, and `PortalPreviewModal`. Monorepo tests: 175/175 green (136 API + 9 AI + 30 Worker), 0 type errors across all 9 packages, and Next.js 15 web app building cleanly with 11 routes.
-- **Next Recommended Task**: `TASK-028: Explicit User Authorization & Submission Execution`
+- **Current Phase**: Phase 10: Student Dashboard, Tracking & Admin Panel (Phase 9 completed)
+- **Active Task**: None (Awaiting user approval to start `TASK-029: Student Application Tracking Dashboard`)
+- **Project Status**: `TASK-028: Explicit User Authorization & Submission Execution` completed and verified. Scholaris strictly enforces the **Mandatory Submission Rule**: automated submission is impossible without explicit student digital signature and recorded timestamp (`userApprovedAt`). Backend endpoints `POST /api/v1/applications/:id/approve` and `POST /api/v1/applications/:id/submit` gate execution, dispatching `SUBMIT_APPLICATION` jobs to the Playwright browser worker which navigates the portal, triggers final submission, validates confirmation DOM state, extracts confirmation reference codes, and archives proof screenshots to the S3 vault. Frontend features `AuthorizationModal` with dual legal consent checkboxes and electronic signature input, `SubmissionProgressModal` with real-time 4-stage pipeline stepper, live elapsed timer, confirmation receipt viewer, and text receipt download. Monorepo tests: 184/184 green (145 API + 9 AI + 30 Worker), 0 type errors across all 9 packages, and Next.js 15 web app building cleanly with 11 routes.
+- **Next Recommended Task**: `TASK-029: Student Application Tracking Dashboard`
 
 ---
 
 ## 2. Recently Completed Tasks
+
+### TASK-028: Explicit User Authorization & Submission Execution
+- **Completed On**: 2026-11-24
+- **What Was Done**:
+  - Implemented Mandatory Authorization Gate & Submission Execution Service (`apps/api/src/modules/applications/`):
+    - `POST /api/v1/applications/:id/approve`: Validates that 100% of mandatory requirements are resolved (`unresolvedCount === 0`); records electronic student signature, verifiable cryptographic consent hash, and UTC timestamp (`userApprovedAt`); transitions `Application.status` to `AWAITING_APPROVAL`.
+    - `POST /api/v1/applications/:id/submit`: Strictly enforces the **Mandatory Submission Invariant** (`userApprovedAt != null`, returning 403 `FORBIDDEN` otherwise); blocks suspicious scholarship submissions; creates `AutomationJob` (`type: 'SUBMIT_APPLICATION'`, `status: 'QUEUED'`); transitions `Application.status` to `SUBMITTING`; and dispatches job to BullMQ `automationQueue`.
+    - `GET /api/v1/applications/:id/submission-status`: Returns live `SubmissionStatusDTO` with status, `userApprovedAt`, `submittedAt`, `submissionProofUrl`, parsed `confirmationCode`, and automation job execution logs.
+  - Implemented Playwright Worker Submission Pipeline (`apps/browser-worker/src/queue/automation.worker.ts`):
+    - Enforced `SubmissionGuard.assertCanExecuteAction('SUBMIT', ...)` guaranteeing student consent is verified before clicking submit buttons.
+    - Located final submit buttons via multi-strategy matching (`button[type="submit"]`, `input[type="submit"]`, role button with submit label text).
+    - Executed final submit action with DOM verification waiting for confirmation elements (`alert-success`, `confirmation`, `reference`, `thank you`).
+    - Captured high-resolution confirmation screenshot tagged `submission-proof` and uploaded to MinIO/S3 object storage.
+    - Extracted confirmation reference code and updated `Application` status to `SUBMITTED`, `submittedAt`, and `submissionProofUrl`.
+  - Built Frontend UI Components & Authorization Flows (`apps/web/`):
+    - `AuthorizationModal` (`components/applications/authorization-modal.tsx`): Built according to `impeccable` and `ui-ux-pro-max` craft standards; accessible dialog with focus management; dual explicit consent checkboxes (accuracy/authorship and explicit transmission permission); legal irreversible action notice; full legal name electronic signature input; and disabled button state until conditions are met.
+    - `SubmissionProgressModal` (`components/applications/submission-progress-modal.tsx`): Real-time polling of submission status; 4-step vertical execution stepper (Authorization Gate Passed -> Browser Navigating -> Executing Final Submission -> Capturing Proof); live elapsed timer; official receipt card with confirmation code (one-click copy); submission timestamp; full resolution proof thumbnail viewer; and `.txt` submission receipt export.
+    - Wired modals into `/applications/[id]/review` review page and updated `SubmissionChecklistBanner` to handle `SUBMITTED` state with receipt view action.
+  - Authored automated test suite (`apps/api/test/application-submission.test.ts`) covering 9 test scenarios:
+    1. Blocks approval with 400 `UNRESOLVED_REQUIREMENTS` when unresolved items exist.
+    2. Successfully approves application and records digital consent when all items resolved.
+    3. Rejects approval with 400 when signature is shorter than 3 characters.
+    4. Rejects approval with 403 for unauthorized users (tenant isolation).
+    5. Mandatory Submission Rule: Strictly blocks submission with 403 Forbidden if unapproved (`userApprovedAt == null`).
+    6. Rejects submission with 400 `SCHOLARSHIP_SUSPICIOUS` if scholarship is flagged suspicious.
+    7. Successfully enqueues `SUBMIT_APPLICATION` job and transitions status to `SUBMITTING` when approved.
+    8. Returns live submission status with proof screenshot URL and confirmation code.
+    9. Enforces tenant isolation on submission status endpoint.
+- **Verification Results**:
+  - `pnpm --filter @scholaris/api test test/application-submission.test.ts` passed with **9/9 tests green**.
+  - `pnpm test` passed with **184/184 tests green** across monorepo (145 API + 9 AI + 30 Worker).
+  - `pnpm -r check-types` passed with **0 errors across all 9 packages**.
+  - `pnpm --filter @scholaris/web build` passed cleanly with **11/11 routes** compiling and prerendering.
 
 ### TASK-027: Pre-Submission Application Review Interface
 - **Completed On**: 2026-11-24

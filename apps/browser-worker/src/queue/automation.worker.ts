@@ -228,16 +228,108 @@ export async function processBrowserAutomationJob(
           // Prisma update optional in unit tests
         }
       }
+    } else if (type === 'SUBMIT_APPLICATION') {
+      // 1. Enforce Mandatory Submission Approval Invariant
+      await SubmissionGuard.assertCanExecuteAction(
+        'SUBMIT',
+        'final_submit',
+        !!userApproved,
+        userApprovedAt
+      );
+
+      // 2. Locate final submission trigger buttons on page
+      const submissionButtons = await SubmissionGuard.findSubmissionButtons(session.page);
+      let submitButtonLocator = null;
+
+      if (submissionButtons.length > 0) {
+        submitButtonLocator = session.page.locator(submissionButtons[0].selector).first();
+      } else {
+        const fallbackSelectors = [
+          'button[type="submit"]',
+          'input[type="submit"]',
+          'button:has-text("Submit")',
+          'button:has-text("Apply")',
+          'a[role="button"]:has-text("Submit")',
+        ];
+        for (const sel of fallbackSelectors) {
+          const loc = session.page.locator(sel).first();
+          if ((await loc.count()) > 0) {
+            submitButtonLocator = loc;
+            break;
+          }
+        }
+      }
+
+      if (!submitButtonLocator || (await submitButtonLocator.count()) === 0) {
+        throw new Error('Could not find final submission button on scholarship application page.');
+      }
+
+      // 3. Click final submit button
+      await submitButtonLocator.scrollIntoViewIfNeeded().catch(() => {});
+      await submitButtonLocator.click();
+
+      // 4. Wait for submission confirmation state
+      try {
+        await Promise.race([
+          session.page.waitForNavigation({ timeout: 10000 }).catch(() => {}),
+          session.page.waitForSelector(
+            '[class*="success"], [id*="success"], [class*="confirmation"], h1:has-text("Thank"), h2:has-text("Thank"), :has-text("Application Submitted")',
+            { timeout: 10000 }
+          ).catch(() => {}),
+          session.page.waitForTimeout(3000),
+        ]);
+      } catch {}
+
+      // 5. Inspect page for confirmation text or application reference code
+      let confirmationEvidence = '';
+      try {
+        confirmationEvidence = await session.page.evaluate(() => {
+          const text = document.body.innerText || '';
+          const match = text.match(/(reference|confirmation|application|submission)\s*(number|id|code|#)?[:\s]*([a-zA-Z0-9_-]{4,30})/i);
+          return match ? match[0] : '';
+        });
+      } catch {}
+
+      // 6. Update PostgreSQL Application status to SUBMITTED
+      if (applicationId) {
+        try {
+          await prisma.application.update({
+            where: { id: applicationId },
+            data: {
+              status: 'SUBMITTED',
+              submittedAt: new Date(),
+              notes: confirmationEvidence ? `Confirmed with reference: ${confirmationEvidence}` : undefined,
+            },
+          });
+        } catch {}
+      }
     }
 
-    // Capture success / filled form screenshot
+    // Capture success / filled form / submission proof screenshot
     const screenshotBuffer = await session.page.screenshot({ fullPage: false });
-    const screenshotTag = type === 'FILL_FORM' ? 'filled' : 'progress';
+    const screenshotTag =
+      type === 'SUBMIT_APPLICATION'
+        ? 'submission-proof'
+        : type === 'FILL_FORM'
+        ? 'filled'
+        : 'progress';
     const screenshotPath = await screenshotService.saveScreenshot(
       screenshotBuffer,
       jobId,
       screenshotTag
     );
+
+    // Link submissionProofUrl if submitting
+    if (type === 'SUBMIT_APPLICATION' && applicationId) {
+      try {
+        await prisma.application.update({
+          where: { id: applicationId },
+          data: {
+            submissionProofUrl: screenshotPath,
+          },
+        });
+      } catch {}
+    }
 
     // 6. Update records to COMPLETED
     if (browserSessionId) {

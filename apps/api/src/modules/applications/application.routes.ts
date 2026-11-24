@@ -25,4 +25,9 @@ export const applicationRoutes: FastifyPluginAsync = async (server) => {
 
   // Pre-Submission Application Review (TASK-027)
   server.get('/api/v1/applications/:id/review', controller.getApplicationReview);
+
+  // Submission Authorization & Execution (TASK-028)
+  server.post('/api/v1/applications/:id/approve', controller.approveApplication);
+  server.post('/api/v1/applications/:id/submit', controller.submitApplication);
+  server.get('/api/v1/applications/:id/submission-status', controller.getSubmissionStatus);
 };

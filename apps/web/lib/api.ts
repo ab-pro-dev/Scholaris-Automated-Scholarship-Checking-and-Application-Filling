@@ -25,6 +25,7 @@ import {
   EssayDraftResult,
   FieldMatchingSummary,
   ApplicationReviewDTO,
+  SubmissionStatusDTO,
 } from '@scholaris/types';
 import {
   RegisterInput,
@@ -39,6 +40,8 @@ import {
   AnalyzeScholarshipInput,
   DraftEssayInput,
   UpdateFieldMappingInput,
+  ApproveApplicationInput,
+  SubmitApplicationInput,
 } from '@scholaris/validation';
 
 const API_BASE_URL =
@@ -618,6 +621,42 @@ class ApiClient {
   ): Promise<{ downloadUrl: string; filename: string }> {
     return this.request<{ downloadUrl: string; filename: string }>(
       `/api/v1/documents/${documentId}/download`,
+      {
+        method: 'GET',
+      }
+    );
+  }
+
+  // ==========================================
+  // Submission Authorization & Status (TASK-028)
+  // ==========================================
+
+  async approveApplication(
+    applicationId: string,
+    input: ApproveApplicationInput
+  ): Promise<any> {
+    return this.request<any>(`/api/v1/applications/${applicationId}/approve`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  async submitApplication(
+    applicationId: string,
+    input?: SubmitApplicationInput
+  ): Promise<{ success: boolean; jobId: string; status: string; message: string }> {
+    return this.request<{ success: boolean; jobId: string; status: string; message: string }>(
+      `/api/v1/applications/${applicationId}/submit`,
+      {
+        method: 'POST',
+        body: JSON.stringify(input || { confirmed: true }),
+      }
+    );
+  }
+
+  async getSubmissionStatus(applicationId: string): Promise<SubmissionStatusDTO> {
+    return this.request<SubmissionStatusDTO>(
+      `/api/v1/applications/${applicationId}/submission-status`,
       {
         method: 'GET',
       }

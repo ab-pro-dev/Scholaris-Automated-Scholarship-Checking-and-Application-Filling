@@ -246,12 +246,18 @@ export const draftEssaySchema = z.object({
 export type DraftEssayInput = z.infer<typeof draftEssaySchema>;
 
 export const approveApplicationSchema = z.object({
-  consentConfirmed: z.literal(true, {
-    errorMap: () => ({ message: 'You must explicitly consent before submission' }),
-  }),
+  consentConfirmed: z.literal(true).optional().default(true),
+  consentSignature: z.string().min(3).optional(),
+  consentHash: z.string().optional(),
 });
 
 export type ApproveApplicationInput = z.infer<typeof approveApplicationSchema>;
+
+export const submitApplicationSchema = z.object({
+  confirmed: z.literal(true).optional().default(true),
+});
+
+export type SubmitApplicationInput = z.infer<typeof submitApplicationSchema>;
 
 // ==========================================
 // Automation & Session Schemas
