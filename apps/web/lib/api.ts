@@ -24,6 +24,7 @@ import {
   MissingInfoDetailDTO,
   EssayDraftResult,
   FieldMatchingSummary,
+  ApplicationReviewDTO,
 } from '@scholaris/types';
 import {
   RegisterInput,
@@ -604,6 +605,23 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify(input),
     });
+  }
+
+  async getApplicationReview(applicationId: string): Promise<ApplicationReviewDTO> {
+    return this.request<ApplicationReviewDTO>(`/api/v1/applications/${applicationId}/review`, {
+      method: 'GET',
+    });
+  }
+
+  async getDocumentDownloadUrl(
+    documentId: string
+  ): Promise<{ downloadUrl: string; filename: string }> {
+    return this.request<{ downloadUrl: string; filename: string }>(
+      `/api/v1/documents/${documentId}/download`,
+      {
+        method: 'GET',
+      }
+    );
   }
 }
 

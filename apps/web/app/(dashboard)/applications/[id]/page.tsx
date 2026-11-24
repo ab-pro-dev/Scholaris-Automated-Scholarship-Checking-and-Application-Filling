@@ -12,6 +12,7 @@ import {
   Clock,
   Layers,
   ChevronRight,
+  ShieldCheck,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { MissingInfoDetailDTO, FieldMatchingSummary } from '@scholaris/types';
@@ -156,6 +157,13 @@ export default function ApplicationDetailPage({ params }: PageProps) {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => router.push(`/applications/${applicationId}/review`)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-semibold hover:bg-slate-800 transition-colors shadow-xs"
+          >
+            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            Review & Finalize
+          </button>
           <button
             onClick={handleRunMatching}
             disabled={isMatching}

@@ -7,13 +7,39 @@ This file is the living memory of the **Scholaris** project (formerly ASCAF). It
 ## 1. Current State Summary
 
 - **Current Phase**: Phase 9: Review Screen & User-Controlled Submission
-- **Active Task**: None (Awaiting user approval to start `TASK-027: Pre-Submission Application Review Interface`)
-- **Project Status**: `TASK-026: Automated Form Field Filling & Document Attachment` completed and verified. `FormFiller` and `FileUploader` engines in `apps/browser-worker` execute automated filling of scholarship portal forms across all standard field types (`TEXT`, `DATE`, `TEXTAREA`, `SELECT`, `RADIO`, `CHECKBOX`, `FILE`) using verified `FieldMapping` records, secure S3 document streaming, reactive DOM event dispatching (`input`, `change`, `blur`), and safe multi-page wizard navigation. Enforces the **Mandatory Submission Rule**: strictly halts short of final submission, records discovered submission triggers without clicking them, saves draft states where available, and captures high-resolution screenshots tagged `filled` for student review. BullMQ worker transitions `Application.status` to `READY_FOR_REVIEW`. Monorepo tests: 171/171 green (132 API + 9 AI + 30 Worker), 0 type errors across all 9 packages, and Next.js 15 web app building cleanly with 10 routes.
-- **Next Recommended Task**: `TASK-027: Pre-Submission Application Review Interface`
+- **Active Task**: None (Awaiting user approval to start `TASK-028: Explicit User Authorization & Submission Execution`)
+- **Project Status**: `TASK-027: Pre-Submission Application Review Interface` completed and verified. `ApplicationService` provides comprehensive review aggregation (`GET /api/v1/applications/:id/review`), grouping form fields by portal page/section with explicit source attribution (`PROFILE`, `DOCUMENT`, `USER_INPUT`, `AI_DRAFT`), real-time in-place editing (`PATCH /api/v1/applications/:id/field-mappings`), attached document listing with vault downloads, live form preview screenshot thumbnail from the browser worker, and submission readiness gating (`canAuthorizeSubmission: true` only when 100% of mandatory items are resolved). Frontend features responsive review page (`/applications/[id]/review`), `SubmissionChecklistBanner`, `ReviewFieldRow`, `ReviewDocumentsList`, and `PortalPreviewModal`. Monorepo tests: 175/175 green (136 API + 9 AI + 30 Worker), 0 type errors across all 9 packages, and Next.js 15 web app building cleanly with 11 routes.
+- **Next Recommended Task**: `TASK-028: Explicit User Authorization & Submission Execution`
 
 ---
 
 ## 2. Recently Completed Tasks
+
+### TASK-027: Pre-Submission Application Review Interface
+- **Completed On**: 2026-11-24
+- **What Was Done**:
+  - Implemented Application Review Backend Endpoints & Service Logic (`apps/api/src/modules/applications/`):
+    - `GET /api/v1/applications/:id/review`: Aggregates scholarship metadata, page/section-grouped fields, mapped values with confidence scores, attached documents from `ApplicationDocument`, unresolved missing prompts, latest browser screenshot, and summary statistics (`totalFieldsCount`, `filledFieldsCount`, `unresolvedCount`, `completionPercentage`, `canAuthorizeSubmission`).
+    - Enforced submission gating invariant: `canAuthorizeSubmission` is strictly `false` if any mandatory item is unresolved or status is not `READY_FOR_REVIEW`.
+    - Enhanced `getApplication` to include `applicationDocuments` with `document` and latest `browserSessions`.
+  - Built Frontend UI Components & Interactive Review Workspace (`apps/web/`):
+    - `SubmissionChecklistBanner` (`components/applications/submission-checklist-banner.tsx`): Prominent amber/green validation banner showing unresolved item counts, progress percentage, and CTA buttons.
+    - `ReviewFieldRow` (`components/applications/review-field-row.tsx`): Field row showing label, required marker, source badges (`PROFILE`, `DOCUMENT`, `USER_INPUT`, `AI_DRAFT`), match confidence, expandable long essay previews, and in-place inline editing with immediate save.
+    - `ReviewDocumentsList` (`components/applications/review-documents-list.tsx`): Attached documents grid with file sizes, categories, and presigned preview/download links.
+    - `PortalPreviewModal` (`components/applications/portal-preview-modal.tsx`): Zoomable modal inspecting external scholarship form screenshots captured during automated filling.
+    - Pre-Submission Review Page (`app/(dashboard)/applications/[id]/review/page.tsx`): Complete review dashboard with section accordions, sticky summary sidebar, live snapshot thumbnail, and Mandatory Submission Rule reminders.
+    - Linked "Review & Finalize" CTA button from application workspace page (`/applications/[id]`).
+    - Added typed client methods `getApplicationReview` and `getDocumentDownloadUrl` in `apps/web/lib/api.ts`.
+  - Authored automated test suite (`apps/api/test/application-review.test.ts`) covering 4 scenarios:
+    1. Complete review data retrieval with sections, documents, and screenshot URL.
+    2. Real-time in-place field mapping edits via `PATCH`.
+    3. `canAuthorizeSubmission` enablement on 100% resolution.
+    4. Strict tenant isolation preventing access to other students' applications.
+- **Verification Results**:
+  - `pnpm --filter @scholaris/api test test/application-review.test.ts` passed with **4/4 tests green**.
+  - `pnpm test` passed with **175/175 tests green** across monorepo (136 API + 9 AI + 30 Worker).
+  - `pnpm -r check-types` passed with **0 errors across all 9 packages**.
+  - `pnpm --filter @scholaris/web build` passed cleanly with **11/11 routes** compiling and prerendering.
 
 ### TASK-026: Automated Form Field Filling & Document Attachment
 - **Completed On**: 2026-11-24

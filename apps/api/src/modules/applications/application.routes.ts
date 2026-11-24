@@ -22,4 +22,7 @@ export const applicationRoutes: FastifyPluginAsync = async (server) => {
   server.put('/api/v1/applications/:id/missing-info/:infoId', controller.updateMissingInfo);
   server.put('/api/v1/applications/:id/missing-info', controller.updateMissingInfo);
   server.post('/api/v1/applications/:id/draft-essay', controller.draftEssay);
+
+  // Pre-Submission Application Review (TASK-027)
+  server.get('/api/v1/applications/:id/review', controller.getApplicationReview);
 };

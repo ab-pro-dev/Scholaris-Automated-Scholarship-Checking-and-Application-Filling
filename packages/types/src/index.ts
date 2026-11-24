@@ -352,6 +352,74 @@ export interface FieldMatchingSummary {
   status: ApplicationStatus;
 }
 
+export interface ReviewFieldItem {
+  fieldId: string;
+  fieldKey: string;
+  label: string;
+  fieldType: FieldType;
+  options?: string[] | null;
+  isRequired: boolean;
+  pageNumber: number;
+  mappedValue: string | null;
+  sourceType: MappingSourceType | null;
+  sourcePath?: string | null;
+  confidence: number;
+  isEditedByUser: boolean;
+  isResolved: boolean;
+}
+
+export interface ReviewSection {
+  name: string;
+  pageNumber: number;
+  fields: ReviewFieldItem[];
+}
+
+export interface ReviewDocumentItem {
+  id: string;
+  name: string;
+  category: DocumentCategory;
+  mimeType: string;
+  sizeBytes: number;
+  fileKey: string;
+  fileUrl?: string | null;
+  targetFieldKey?: string | null;
+  attachedAt: string;
+}
+
+export interface ApplicationReviewDTO {
+  applicationId: string;
+  status: ApplicationStatus;
+  userApprovedAt?: string | null;
+  submittedAt?: string | null;
+  scholarship: {
+    id: string;
+    title: string;
+    providerName: string;
+    websiteUrl: string;
+    applicationUrl?: string | null;
+    deadline?: string | null;
+    fundingType: string;
+  };
+  previewScreenshotUrl?: string | null;
+  summary: {
+    totalFieldsCount: number;
+    filledFieldsCount: number;
+    unresolvedCount: number;
+    missingCount: number;
+    canAuthorizeSubmission: boolean;
+    completionPercentage: number;
+  };
+  sections: ReviewSection[];
+  attachedDocuments: ReviewDocumentItem[];
+  unresolvedMissingItems: Array<{
+    id: string;
+    prompt: string;
+    category: MissingInfoCategory;
+    fieldId?: string | null;
+    fieldLabel?: string;
+  }>;
+}
+
 // ==========================================
 // Browser Worker & Jobs
 // ==========================================

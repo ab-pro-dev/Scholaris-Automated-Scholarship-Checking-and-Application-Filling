@@ -94,6 +94,21 @@ export class ApplicationController {
     });
   };
 
+  getApplicationReview = async (
+    request: FastifyRequest<{ Params: { id: string } }>,
+    reply: FastifyReply
+  ) => {
+    const userId = request.user.sub;
+    const { id } = request.params;
+    const service = this.getAppService(request);
+
+    const review = await service.getApplicationReview(userId, id);
+    return reply.status(200).send({
+      success: true,
+      data: review,
+    });
+  };
+
   listApplications = async (request: FastifyRequest, reply: FastifyReply) => {
     const userId = request.user.sub;
     const service = this.getAppService(request);

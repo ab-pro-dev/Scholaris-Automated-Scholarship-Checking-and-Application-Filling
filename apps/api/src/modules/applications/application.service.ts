@@ -1,6 +1,12 @@
 import { PrismaClient } from '@scholaris/database';
 import { AppError, NotFoundError, ForbiddenError } from '@scholaris/shared';
 import {
+  ApplicationReviewDTO,
+  ReviewSection,
+  ReviewFieldItem,
+  ReviewDocumentItem,
+} from '@scholaris/types';
+import {
   CreateApplicationInput,
   UpdateFieldMappingInput,
   ResolveMissingInfoInput,
@@ -75,6 +81,13 @@ export class ApplicationService {
         missingInformation: {
           include: { field: true },
         },
+        applicationDocuments: {
+          include: { document: true },
+        },
+        browserSessions: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
       },
     });
 
@@ -87,6 +100,115 @@ export class ApplicationService {
     }
 
     return application;
+  }
+
+  /**
+   * Prepares complete application review data for the pre-submission review screen (TASK-027).
+   */
+  async getApplicationReview(userId: string, applicationId: string): Promise<ApplicationReviewDTO> {
+    const application = await this.getApplication(userId, applicationId);
+
+    // Group fields into sections by pageNumber or semantic grouping
+    const pageMap = new Map<number, ReviewFieldItem[]>();
+
+    for (const field of application.fields) {
+      const mapping = application.fieldMappings.find((m) => m.fieldId === field.id);
+      const missing = application.missingInformation.find((m) => m.fieldId === field.id);
+
+      const pageNum = field.pageNumber || 1;
+      if (!pageMap.has(pageNum)) {
+        pageMap.set(pageNum, []);
+      }
+
+      pageMap.get(pageNum)!.push({
+        fieldId: field.id,
+        fieldKey: field.fieldKey,
+        label: field.label,
+        fieldType: field.fieldType,
+        options: field.options as string[] | null,
+        isRequired: field.isRequired,
+        pageNumber: pageNum,
+        mappedValue: mapping?.mappedValue || null,
+        sourceType: mapping?.sourceType || null,
+        sourcePath: mapping?.sourcePath || null,
+        confidence: mapping?.confidence || (missing?.isResolved ? 1.0 : 0.0),
+        isEditedByUser: mapping?.isEditedByUser || false,
+        isResolved: missing ? missing.isResolved : !!mapping?.mappedValue,
+      });
+    }
+
+    const sections: ReviewSection[] = Array.from(pageMap.entries()).map(([pageNum, fields]) => {
+      let name = `Page ${pageNum} Details`;
+      if (pageNum === 1) {
+        name = 'General Information & Personal Details';
+      } else if (pageNum === 2) {
+        name = 'Academic Background & Experiences';
+      } else if (pageNum === 3) {
+        name = 'Essays & Additional Requirements';
+      }
+      return {
+        name,
+        pageNumber: pageNum,
+        fields,
+      };
+    });
+
+    const attachedDocuments: ReviewDocumentItem[] = (application.applicationDocuments || []).map((ad: any) => ({
+      id: ad.document.id,
+      name: ad.document.name,
+      category: ad.document.category,
+      mimeType: ad.document.mimeType,
+      sizeBytes: ad.document.sizeBytes,
+      fileKey: ad.document.fileKey,
+      fileUrl: ad.document.fileUrl,
+      targetFieldKey: ad.targetFieldKey,
+      attachedAt: ad.createdAt.toISOString(),
+    }));
+
+    const unresolvedMissingItems = application.missingInformation
+      .filter((m: any) => !m.isResolved)
+      .map((m: any) => ({
+        id: m.id,
+        prompt: m.prompt,
+        category: m.category,
+        fieldId: m.fieldId,
+        fieldLabel: m.field?.label,
+      }));
+
+    const filledCount = application.fieldMappings.filter(
+      (m: any) => m.mappedValue && m.mappedValue.trim().length > 0
+    ).length;
+
+    const totalCount = application.fields.length;
+    const unresolvedCount = unresolvedMissingItems.length;
+
+    return {
+      applicationId: application.id,
+      status: application.status,
+      userApprovedAt: application.userApprovedAt?.toISOString() || null,
+      submittedAt: application.submittedAt?.toISOString() || null,
+      scholarship: {
+        id: application.scholarship.id,
+        title: application.scholarship.title,
+        providerName: application.scholarship.providerName,
+        websiteUrl: application.scholarship.websiteUrl,
+        applicationUrl: application.scholarship.applicationUrl,
+        deadline: application.scholarship.deadline?.toISOString() || null,
+        fundingType: application.scholarship.fundingType,
+      },
+      previewScreenshotUrl: application.browserSessions[0]?.lastScreenshotUrl || null,
+      summary: {
+        totalFieldsCount: totalCount,
+        filledFieldsCount: filledCount,
+        unresolvedCount,
+        missingCount: unresolvedCount,
+        canAuthorizeSubmission: unresolvedCount === 0 && application.status === 'READY_FOR_REVIEW',
+        completionPercentage: totalCount > 0 ? Math.round((filledCount / totalCount) * 100) : 100,
+      },
+      sections,
+      attachedDocuments,
+      unresolvedMissingItems,
+    };
   }
 
   /**
