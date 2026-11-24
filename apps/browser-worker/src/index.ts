@@ -8,6 +8,8 @@ export * from './security/network-firewall.js';
 export * from './security/submission-guard.js';
 export * from './storage/screenshot.service.js';
 export * from './browser/browser-pool.js';
+export * from './detector/dom-extractor.js';
+export * from './detector/form-detector.service.js';
 export * from './queue/automation.queue.js';
 export * from './queue/automation.worker.js';
 

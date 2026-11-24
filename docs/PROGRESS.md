@@ -7,13 +7,39 @@ This file is the living memory of the **Scholaris** project (formerly ASCAF). It
 ## 1. Current State Summary
 
 - **Current Phase**: Phase 7: Browser Automation Engine (Playwright)
-- **Active Task**: None (Awaiting user approval to start `TASK-022: Form Detection & DOM Analysis`)
-- **Project Status**: Phase 7 foundation (`TASK-021: Playwright Browser Worker Infrastructure`) is completed and verified. `apps/browser-worker` operates an isolated Chromium browser pool launching ephemeral, incognito contexts with resource controls and an integrated SSRF network firewall intercepting and aborting requests to private IPs (RFC 1918), loopback, cloud metadata (169.254.169.254), and internal database ports. BullMQ automation queue worker processes `VERIFY_URL`, `EXTRACT_FORM`, `FILL_FORM`, and enforces the immutable Mandatory Submission Rule blocking unapproved final submissions with emergency screenshot auditing. 136/136 tests passing green across the monorepo (114 API + 9 AI + 13 Worker), 0 type errors across all 8 packages, and Next.js 15 web app building cleanly with 9/9 static pages.
-- **Next Recommended Task**: `TASK-022: Form Detection & DOM Analysis`
+- **Active Task**: None (Awaiting user approval to start `TASK-023: Interactive User Login & CAPTCHA Handoff Protocol`)
+- **Project Status**: `TASK-022: Form Detection & DOM Analysis` completed and verified. `apps/browser-worker` features `FormDetectorService` and in-browser DOM extraction identifying interactive form controls (`TEXT`, `TEXTAREA`, `SELECT`, `RADIO`, `CHECKBOX`, `FILE`, `DATE`), extracting semantic labels via `<label for>`, parent `<label>`, `aria-label`, `aria-labelledby`, `<legend>`, placeholders, and formatted names, detecting required markers (`required`, `aria-required`, `*`), detecting multi-step wizard pagination ("Step 1 of 4", `.step-indicator`), and transactionally persisting discovered fields into PostgreSQL `ApplicationField` rows. Monorepo tests: 140/140 green (114 API + 9 AI + 17 Worker), 0 type errors across all 9 packages, and Next.js 15 web app building cleanly with 9/9 static pages.
+- **Next Recommended Task**: `TASK-023: Interactive User Login & CAPTCHA Handoff Protocol`
 
 ---
 
 ## 2. Recently Completed Tasks
+
+### TASK-022: Form Detection & DOM Analysis
+- **Completed On**: 2026-11-24
+- **What Was Done**:
+  - Implemented `extractFormFieldsFromDOM` (`apps/browser-worker/src/detector/dom-extractor.ts`) providing robust DOM evaluation inside Playwright page context:
+    - Filters out non-input interactive controls (`hidden`, `submit`, `button`, `reset`, `image`).
+    - Normalizes form controls into Prisma `FieldType` enum values: `TEXT`, `TEXTAREA`, `SELECT`, `RADIO`, `CHECKBOX`, `FILE`, `DATE`.
+    - Automatically extracts dropdown `<option>` values from `<select>` controls and parses option lists for grouped `<input type="radio">` sets.
+    - Resolves human-readable semantic labels through an 8-stage fallback hierarchy: explicit `<label for="id">`, parent enclosing `<label>`, `aria-label`, `aria-labelledby`, enclosing `<fieldset><legend>`, preceding sibling elements, `placeholder` text, and humanized name/id formatting.
+    - Accurately detects `isRequired` status via HTML `required` attributes, `aria-required="true"`, label asterisks (`*`), and mandatory CSS indicators.
+    - Detects multi-step/wizard indicators (`Step X of Y`, `.step-indicator`, `.wizard`, `.steps`) and estimates total form pages.
+  - Implemented `FormDetectorService` (`apps/browser-worker/src/detector/form-detector.service.ts`):
+    - Supports dynamic JavaScript single-page application loading with configurable DOM ready and selector wait states.
+    - Transactionally stores detected fields into PostgreSQL `ApplicationField` rows under the active `Application`, cleaning up prior runs to prevent duplicates.
+  - Wired `FormDetectorService.detectAndPersist` directly into BullMQ `processBrowserAutomationJob` for `EXTRACT_FORM` jobs in `apps/browser-worker/src/queue/automation.worker.ts`.
+  - Re-exported detector services and DOM extraction utilities in `apps/browser-worker/src/index.ts`.
+  - Authored automated test suite (`apps/browser-worker/test/form-detector.test.ts`) covering:
+    - Multi-type control extraction and semantic label resolution (8 field types tested).
+    - Multi-step wizard pagination and estimated page count extraction.
+    - PostgreSQL transactional persistence and deduplication into `ApplicationField` rows.
+    - Full end-to-end BullMQ worker processing of `EXTRACT_FORM` jobs.
+- **Verification Results**:
+  - `pnpm --filter @scholaris/browser-worker test` passed with **17/17 tests green**.
+  - `pnpm test` passed with **140/140 tests green** (114 API + 9 AI + 17 Worker).
+  - `pnpm -r check-types` passed with **0 errors across all 9 packages**.
+  - `pnpm --filter @scholaris/web build` passed cleanly with **9/9 static pages** prerendered.
 
 ### TASK-021: Playwright Browser Worker Infrastructure (`apps/browser-worker`)
 - **Completed On**: 2026-11-23

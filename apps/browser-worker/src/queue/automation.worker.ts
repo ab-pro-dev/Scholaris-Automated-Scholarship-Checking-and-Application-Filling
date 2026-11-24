@@ -9,13 +9,15 @@ import {
 import { BrowserPool } from '../browser/browser-pool.js';
 import { ScreenshotService } from '../storage/screenshot.service.js';
 import { SubmissionGuard, MandatorySubmissionApprovalError } from '../security/submission-guard.js';
+import { FormDetectorService } from '../detector/form-detector.service.js';
 import { env } from '../config/env.js';
 
 export async function processBrowserAutomationJob(
   jobData: AutomationJobData,
   prisma: PrismaClient,
   browserPool: BrowserPool,
-  screenshotService: ScreenshotService
+  screenshotService: ScreenshotService,
+  formDetector: FormDetectorService = new FormDetectorService(prisma)
 ): Promise<AutomationJobResult> {
   const { jobId, applicationId, type, targetUrl, userApproved, userApprovedAt } = jobData;
 
@@ -71,11 +73,18 @@ export async function processBrowserAutomationJob(
     let detectedFieldsCount = 0;
     let filledFieldsCount = 0;
 
-    if (type === 'EXTRACT_FORM' || type === 'FILL_FORM') {
+    if (type === 'EXTRACT_FORM') {
+      const detectionResult = await formDetector.detectAndPersist(
+        session.page,
+        applicationId || '',
+        { timeoutMs: env.BROWSER_TIMEOUT_MS }
+      );
+      detectedFieldsCount = detectionResult.totalFieldsCount;
+    } else if (type === 'FILL_FORM') {
       const inputs = await session.page.$$('input:not([type="hidden"]), select, textarea');
       detectedFieldsCount = inputs.length;
 
-      if (type === 'FILL_FORM' && jobData.fieldValues) {
+      if (jobData.fieldValues) {
         for (const [key, val] of Object.entries(jobData.fieldValues)) {
           try {
             const el = await session.page.$(`[name="${key}"], #${key}`);
