@@ -325,7 +325,7 @@ Tasks must be executed sequentially following their defined dependencies.
   1. `GET/PUT /api/v1/applications/:id/missing-info` gathers missing responses.
   2. `POST /api/v1/applications/:id/draft-essay` drafts motivation letter based on user's background.
   3. UI marks AI-generated drafts clearly and requires explicit student review and edit.
-- **Status**: Pending
+- **Status**: Completed
 
 ### TASK-026: Automated Form Field Filling & Document Attachment
 - **Description**: Browser worker executes automated typing, dropdown selection, radio/checkbox toggling, and file uploading using mapped data.

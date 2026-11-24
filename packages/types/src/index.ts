@@ -301,6 +301,33 @@ export interface MissingInformationDTO {
   userResponse?: string | null;
 }
 
+export interface MissingInfoDetailDTO extends MissingInformationDTO {
+  field?: ApplicationFieldDTO | null;
+  availableDocuments?: {
+    id: string;
+    name: string;
+    category: string;
+  }[];
+}
+
+export interface EssayDraftResult {
+  applicationId: string;
+  fieldId?: string | null;
+  essayDraft: string;
+  wordCount: number;
+  wordLimit?: number | null;
+  sourceType: 'AI_DRAFT';
+  requiresUserReview: true;
+  keyHighlightsUsed: string[];
+  suggestedEdits: string[];
+  aiMetrics?: {
+    model: string;
+    tokensUsed: number;
+    latencyMs: number;
+    costUSD?: number;
+  };
+}
+
 export interface ApplicationDTO {
   id: string;
   userId: string;

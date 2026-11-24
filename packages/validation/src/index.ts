@@ -219,9 +219,28 @@ export const resolveMissingInfoSchema = z.object({
 
 export type ResolveMissingInfoInput = z.infer<typeof resolveMissingInfoSchema>;
 
+export const updateMissingInfoSchema = z.object({
+  userResponse: z.string().min(1, 'Response is required'),
+});
+
+export type UpdateMissingInfoInput = z.infer<typeof updateMissingInfoSchema>;
+
+export const bulkUpdateMissingInfoSchema = z.object({
+  items: z.array(
+    z.object({
+      missingInfoId: z.string().uuid(),
+      userResponse: z.string().min(1, 'Response is required'),
+    })
+  ),
+});
+
+export type BulkUpdateMissingInfoInput = z.infer<typeof bulkUpdateMissingInfoSchema>;
+
 export const draftEssaySchema = z.object({
   prompt: z.string().min(5, 'Prompt must be at least 5 characters').max(2000),
   wordLimit: z.number().int().min(50).max(1500).optional(),
+  fieldId: z.string().uuid().optional(),
+  targetTone: z.enum(['ACADEMIC', 'MOTIVATIONAL', 'PROFESSIONAL', 'PERSONAL']).optional().default('ACADEMIC'),
 });
 
 export type DraftEssayInput = z.infer<typeof draftEssaySchema>;

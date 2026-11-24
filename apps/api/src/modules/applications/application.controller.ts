@@ -3,9 +3,13 @@ import {
   createApplicationSchema,
   updateFieldMappingSchema,
   resolveMissingInfoSchema,
+  updateMissingInfoSchema,
+  bulkUpdateMissingInfoSchema,
+  draftEssaySchema,
 } from '@scholaris/validation';
 import { ApplicationService } from './application.service.js';
 import { FieldMatcherService } from './field-matcher.service.js';
+import { EssayDrafterService } from './essay-drafter.service.js';
 import { AIAuditService } from '../ai/ai-audit.service.js';
 import { AIService } from '@scholaris/ai';
 import { env } from '../../config/env.js';
@@ -13,13 +17,16 @@ import { env } from '../../config/env.js';
 export class ApplicationController {
   private customAppService?: ApplicationService;
   private customMatcherService?: FieldMatcherService;
+  private customEssayService?: EssayDrafterService;
 
   constructor(
     appService?: ApplicationService,
-    matcherService?: FieldMatcherService
+    matcherService?: FieldMatcherService,
+    essayService?: EssayDrafterService
   ) {
     this.customAppService = appService;
     this.customMatcherService = matcherService;
+    this.customEssayService = essayService;
   }
 
   private getAppService(request: FastifyRequest): ApplicationService {
@@ -40,6 +47,21 @@ export class ApplicationController {
         })
       );
     return new FieldMatcherService(prisma, aiAuditService);
+  }
+
+  private getEssayService(request: FastifyRequest): EssayDrafterService {
+    if (this.customEssayService) return this.customEssayService;
+    const prisma = request.server.prisma;
+    const aiAuditService =
+      (request.server as any).aiAuditService ||
+      new AIAuditService(
+        prisma,
+        new AIService({
+          geminiApiKey: env.GEMINI_API_KEY,
+          openRouterApiKey: env.OPENROUTER_API_KEY,
+        })
+      );
+    return new EssayDrafterService(prisma, aiAuditService);
   }
 
   createApplication = async (
@@ -139,6 +161,65 @@ export class ApplicationController {
     const service = this.getAppService(request);
 
     const result = await service.resolveMissingInfo(userId, id, input);
+    return reply.status(200).send({
+      success: true,
+      data: result,
+    });
+  };
+
+  getMissingInfo = async (
+    request: FastifyRequest<{ Params: { id: string } }>,
+    reply: FastifyReply
+  ) => {
+    const userId = request.user.sub;
+    const { id } = request.params;
+    const service = this.getAppService(request);
+
+    const missingItems = await service.getMissingInfo(userId, id);
+    return reply.status(200).send({
+      success: true,
+      data: missingItems,
+    });
+  };
+
+  updateMissingInfo = async (
+    request: FastifyRequest<{
+      Params: { id: string; infoId?: string };
+      Body: unknown;
+    }>,
+    reply: FastifyReply
+  ) => {
+    const userId = request.user.sub;
+    const { id, infoId } = request.params;
+    const service = this.getAppService(request);
+
+    if (infoId) {
+      const input = updateMissingInfoSchema.parse(request.body);
+      const result = await service.updateMissingInfo(userId, id, infoId, input);
+      return reply.status(200).send({
+        success: true,
+        data: result,
+      });
+    } else {
+      const input = bulkUpdateMissingInfoSchema.parse(request.body);
+      const result = await service.bulkUpdateMissingInfo(userId, id, input);
+      return reply.status(200).send({
+        success: true,
+        data: result,
+      });
+    }
+  };
+
+  draftEssay = async (
+    request: FastifyRequest<{ Params: { id: string }; Body: unknown }>,
+    reply: FastifyReply
+  ) => {
+    const userId = request.user.sub;
+    const { id } = request.params;
+    const input = draftEssaySchema.parse(request.body);
+    const essayService = this.getEssayService(request);
+
+    const result = await essayService.draftEssay(userId, id, input);
     return reply.status(200).send({
       success: true,
       data: result,

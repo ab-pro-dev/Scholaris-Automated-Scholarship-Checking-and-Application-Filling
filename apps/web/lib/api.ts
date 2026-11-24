@@ -18,6 +18,12 @@ import {
   EligibilityCriterionResult,
   EligibilityEvaluationSummary,
   EligibilityResultDTO,
+  ApplicationDTO,
+  FieldMappingDTO,
+  MissingInformationDTO,
+  MissingInfoDetailDTO,
+  EssayDraftResult,
+  FieldMatchingSummary,
 } from '@scholaris/types';
 import {
   RegisterInput,
@@ -30,6 +36,8 @@ import {
   PresignedUploadRequestInput,
   ConfirmUploadInput,
   AnalyzeScholarshipInput,
+  DraftEssayInput,
+  UpdateFieldMappingInput,
 } from '@scholaris/validation';
 
 const API_BASE_URL =
@@ -522,6 +530,79 @@ class ApiClient {
   async getRequirements(id: string): Promise<EligibilityRequirementDTO[]> {
     return this.request<EligibilityRequirementDTO[]>(`/api/v1/scholarships/${id}/requirements`, {
       method: 'GET',
+    });
+  }
+
+  // ==========================================
+  // Applications, Field Matching & Essay Drafting (TASK-024, TASK-025)
+  // ==========================================
+
+  async createApplication(scholarshipId: string): Promise<ApplicationDTO> {
+    return this.request<ApplicationDTO>('/api/v1/applications', {
+      method: 'POST',
+      body: JSON.stringify({ scholarshipId }),
+    });
+  }
+
+  async getApplication(id: string): Promise<any> {
+    return this.request<any>(`/api/v1/applications/${id}`, {
+      method: 'GET',
+    });
+  }
+
+  async listApplications(): Promise<any[]> {
+    return this.request<any[]>('/api/v1/applications', {
+      method: 'GET',
+    });
+  }
+
+  async matchApplicationFields(id: string): Promise<FieldMatchingSummary> {
+    return this.request<FieldMatchingSummary>(`/api/v1/applications/${id}/match-fields`, {
+      method: 'POST',
+    });
+  }
+
+  async getFieldMappings(id: string): Promise<any> {
+    return this.request<any>(`/api/v1/applications/${id}/field-mappings`, {
+      method: 'GET',
+    });
+  }
+
+  async updateFieldMapping(
+    applicationId: string,
+    fieldId: string,
+    mappedValue: string
+  ): Promise<any> {
+    return this.request<any>(`/api/v1/applications/${applicationId}/field-mappings`, {
+      method: 'PATCH',
+      body: JSON.stringify({ fieldId, mappedValue }),
+    });
+  }
+
+  async getMissingInfo(applicationId: string): Promise<MissingInfoDetailDTO[]> {
+    return this.request<MissingInfoDetailDTO[]>(`/api/v1/applications/${applicationId}/missing-info`, {
+      method: 'GET',
+    });
+  }
+
+  async updateMissingInfo(
+    applicationId: string,
+    infoId: string,
+    userResponse: string
+  ): Promise<any> {
+    return this.request<any>(`/api/v1/applications/${applicationId}/missing-info/${infoId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ userResponse }),
+    });
+  }
+
+  async draftEssay(
+    applicationId: string,
+    input: DraftEssayInput
+  ): Promise<EssayDraftResult> {
+    return this.request<EssayDraftResult>(`/api/v1/applications/${applicationId}/draft-essay`, {
+      method: 'POST',
+      body: JSON.stringify(input),
     });
   }
 }

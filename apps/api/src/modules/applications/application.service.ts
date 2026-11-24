@@ -4,6 +4,8 @@ import {
   CreateApplicationInput,
   UpdateFieldMappingInput,
   ResolveMissingInfoInput,
+  UpdateMissingInfoInput,
+  BulkUpdateMissingInfoInput,
 } from '@scholaris/validation';
 
 export class ApplicationService {
@@ -197,6 +199,79 @@ export class ApplicationService {
     });
 
     return updatedMapping;
+  }
+
+  /**
+   * Retrieves all missing information items for an application, including field details
+   * and available document vault items for document uploads.
+   */
+  async getMissingInfo(userId: string, applicationId: string) {
+    await this.getApplication(userId, applicationId); // ownership check
+
+    const [missingItems, documents] = await Promise.all([
+      this.prisma.missingInformation.findMany({
+        where: { applicationId },
+        include: { field: true },
+        orderBy: [{ isResolved: 'asc' }, { createdAt: 'asc' }],
+      }),
+      this.prisma.document.findMany({
+        where: { userId },
+        select: { id: true, name: true, category: true },
+      }),
+    ]);
+
+    return missingItems.map((item) => ({
+      ...item,
+      availableDocuments: item.category === 'DOCUMENT_UPLOAD' ? documents : [],
+    }));
+  }
+
+  /**
+   * Updates a single missing information item by its infoId.
+   */
+  async updateMissingInfo(
+    userId: string,
+    applicationId: string,
+    infoId: string,
+    input: UpdateMissingInfoInput
+  ) {
+    return this.resolveMissingInfo(userId, applicationId, {
+      missingInfoId: infoId,
+      userResponse: input.userResponse,
+    });
+  }
+
+  /**
+   * Bulk updates multiple missing information items.
+   */
+  async bulkUpdateMissingInfo(
+    userId: string,
+    applicationId: string,
+    input: BulkUpdateMissingInfoInput
+  ) {
+    await this.getApplication(userId, applicationId); // ownership check
+
+    const results = await Promise.all(
+      input.items.map((item) =>
+        this.resolveMissingInfo(userId, applicationId, {
+          missingInfoId: item.missingInfoId,
+          userResponse: item.userResponse,
+        })
+      )
+    );
+
+    const remainingCount = await this.prisma.missingInformation.count({
+      where: {
+        applicationId,
+        isResolved: false,
+      },
+    });
+
+    return {
+      updatedCount: results.length,
+      remainingMissingCount: remainingCount,
+      isAllResolved: remainingCount === 0,
+    };
   }
 
   /**

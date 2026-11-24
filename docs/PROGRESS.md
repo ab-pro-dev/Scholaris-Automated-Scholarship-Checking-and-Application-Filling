@@ -7,13 +7,44 @@ This file is the living memory of the **Scholaris** project (formerly ASCAF). It
 ## 1. Current State Summary
 
 - **Current Phase**: Phase 8: Semantic Field Matching & Form Filling
-- **Active Task**: None (Awaiting user approval to start `TASK-025: Missing Information & AI Essay Drafting Assistant`)
-- **Project Status**: `TASK-024: AI Semantic Field Matching Engine` completed and verified. `FieldMatcherService` and `ApplicationService` provide hybrid deterministic and AI-powered semantic schema mapping (`taskType: 'MATCHING'`) between discovered scholarship application fields and student profile data (`UserProfile`, `EducationRecord`, `LanguageSkill`, `Achievement`, `Experience`) as well as uploaded documents (`Document`). Generates confidence scores (0.0 – 1.0) with explicit source attribution (`PROFILE`, `DOCUMENT`, `USER_INPUT`, `AI_DRAFT`), option alignment for select/radio elements, anti-hallucination guarantees (never inventing facts), and automatic `MissingInformation` detection (`FIELD_VALUE`, `DOCUMENT_UPLOAD`, `ESSAY_RESPONSE`) with student edit and resolution capabilities. Monorepo tests: 160/160 green (127 API + 9 AI + 24 Worker), 0 type errors across all 9 packages, and Next.js 15 web app building cleanly with 9/9 static pages.
-- **Next Recommended Task**: `TASK-025: Missing Information & AI Essay Drafting Assistant`
+- **Active Task**: None (Awaiting user approval to start `TASK-026: Automated Form Field Filling & Document Attachment`)
+- **Project Status**: `TASK-025: Missing Information & AI Essay Drafting Assistant` completed and verified. `EssayDrafterService` and `ApplicationService` provide missing-information resolution (`GET/PUT /api/v1/applications/:id/missing-info`) and AI-assisted personal statement/motivation letter drafting (`POST /api/v1/applications/:id/draft-essay`, `taskType: 'ESSAY_DRAFT'`) grounded strictly in verified student profile records (`UserProfile`, `EducationRecord`, `LanguageSkill`, `Achievement`, `Experience`). Enforces the Mandatory Student Review Invariant (`sourceType: 'AI_DRAFT'`, `requiresUserReview: true`, transitioning to `sourceType: 'USER_INPUT'` upon student review/edit). UI features responsive missing information resolver (`MissingInfoCard`), interactive field mappings table (`FieldMappingsTable`), and full application detail workspace (`/applications/[id]`). Monorepo tests: 165/165 green (132 API + 9 AI + 24 Worker), 0 type errors across all 9 packages, and Next.js 15 web app building cleanly with 10 routes.
+- **Next Recommended Task**: `TASK-026: Automated Form Field Filling & Document Attachment`
 
 ---
 
 ## 2. Recently Completed Tasks
+
+### TASK-025: Missing Information & AI Essay Drafting Assistant
+- **Completed On**: 2026-11-24
+- **What Was Done**:
+  - Implemented `EssayDrafterService` (`apps/api/src/modules/applications/essay-drafter.service.ts`):
+    - Grounded AI essay/motivation letter generation via `@scholaris/ai` (`AIAuditService` with `taskType: 'ESSAY_DRAFT'`).
+    - Grounding Invariant: Prompts and extracts strictly from verified student background (education, experiences, achievements, skills, GPA, degrees, honors).
+    - Mandatory Student Review Invariant: AI drafts are tagged with `sourceType: 'AI_DRAFT'`, `requiresUserReview: true`, and never automatically finalized without explicit student review and edit.
+    - Word count compliance validation against target word limits with structured highlights and suggested edit pointers.
+    - Full AI token auditing (`totalTokens`, latency, model name, and cost estimates).
+  - Enhanced `ApplicationService` and Controller (`apps/api/src/modules/applications/`):
+    - `GET /api/v1/applications/:id/missing-info`: Gathers unresolved items (`FIELD_VALUE`, `DOCUMENT_UPLOAD`, `ESSAY_RESPONSE`) along with vault document choices for instant document selection.
+    - `PUT /api/v1/applications/:id/missing-info/:infoId`: Resolves a single missing information item with manual input or document attachment.
+    - `PUT /api/v1/applications/:id/missing-info`: Bulk resolves missing items, updates corresponding `FieldMapping` records, and transitions `Application.status` to `READY_FOR_REVIEW` when all items are satisfied.
+    - `POST /api/v1/applications/:id/draft-essay`: Generates tailored essay drafts with prompt-specific constraints.
+  - Implemented Frontend UI Components & Application Workspace:
+    - `MissingInfoCard` (`apps/web/components/applications/missing-info-card.tsx`): Prominent amber banner (`⚠️ AI-Generated Draft — Student Review & Edit Required`), word count tracker against limit, editable textarea, document vault picker for uploads, and one-click resolution.
+    - `FieldMappingsTable` (`apps/web/components/applications/field-mappings-table.tsx`): Detailed mapping breakdown showing label, matched value, source badge (`PROFILE`, `DOCUMENT`, `USER_INPUT`, `AI_DRAFT`), confidence bar, and inline edit modal.
+    - Application Workspace (`apps/web/app/(dashboard)/applications/[id]/page.tsx`): Status banner, progress bar, action buttons (Match Fields, View Form), missing info card list, and field mappings table.
+    - Typed API client additions in `apps/web/lib/api.ts`.
+  - Authored automated test suite (`apps/api/test/essay-drafter.test.ts`) covering 5 test scenarios:
+    1. Grounded essay draft generation with student profile context and review invariant flags.
+    2. Missing information retrieval with document vault options.
+    3. Missing information resolution (text field, document attachment, essay response).
+    4. Transition to `READY_FOR_REVIEW` upon bulk resolution.
+    5. Tenant isolation and authorization checks.
+- **Verification Results**:
+  - `pnpm --filter @scholaris/api test test/essay-drafter.test.ts` passed with **5/5 tests green**.
+  - `pnpm test` passed with **165/165 tests green** across monorepo (132 API + 9 AI + 24 Worker).
+  - `pnpm -r check-types` passed with **0 errors across all 9 packages**.
+  - `pnpm --filter @scholaris/web build` passed cleanly with **10/10 routes** compiling and prerendering.
 
 ### TASK-024: AI Semantic Field Matching Engine
 - **Completed On**: 2026-11-24

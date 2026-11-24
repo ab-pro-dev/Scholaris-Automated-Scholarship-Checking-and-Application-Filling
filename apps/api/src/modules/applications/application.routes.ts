@@ -16,4 +16,10 @@ export const applicationRoutes: FastifyPluginAsync = async (server) => {
   server.get('/api/v1/applications/:id/field-mappings', controller.getFieldMappings);
   server.patch('/api/v1/applications/:id/field-mappings', controller.updateFieldMapping);
   server.post('/api/v1/applications/:id/missing-info/resolve', controller.resolveMissingInfo);
+
+  // Missing Information & Essay Drafting (TASK-025)
+  server.get('/api/v1/applications/:id/missing-info', controller.getMissingInfo);
+  server.put('/api/v1/applications/:id/missing-info/:infoId', controller.updateMissingInfo);
+  server.put('/api/v1/applications/:id/missing-info', controller.updateMissingInfo);
+  server.post('/api/v1/applications/:id/draft-essay', controller.draftEssay);
 };
