@@ -45,10 +45,14 @@ openssl rand -base64 48
 
 ## 3. Database Migrations & First Boot
 
-Before starting application traffic, apply Prisma schema migrations cleanly without resetting data:
+Before starting application traffic, apply Prisma schema migrations cleanly without resetting data (or push the schema on a fresh initial deployment without committed migrations):
 
 ```bash
+# If prisma/migrations exists:
 pnpm --filter @scholaris/database exec prisma migrate deploy
+
+# Or for an initial database using schema.prisma directly:
+pnpm --filter @scholaris/database exec prisma db push
 ```
 
 Ensure private S3 bucket policy blocks anonymous `GetObject` / `ListBucket`; Scholaris serves documents and portal proof screenshots exclusively through short-lived cryptographic presigned URLs.

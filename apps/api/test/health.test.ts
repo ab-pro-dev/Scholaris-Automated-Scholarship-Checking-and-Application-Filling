@@ -40,4 +40,24 @@ describe('Health Check Routes', () => {
     expect(body.status).toBe('ok');
     expect(body.appName).toBe('Scholaris');
   });
+
+  it('returns 503 DATABASE_UNAVAILABLE without leaking file paths when DB is unreachable', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/register',
+      payload: {
+        email: 'db-down-check@scholaris.test',
+        password: 'Password1!',
+        firstName: 'Test',
+        lastName: 'User',
+      },
+    });
+
+    expect(response.statusCode).toBe(503);
+    const body = JSON.parse(response.body);
+    expect(body.success).toBe(false);
+    expect(body.error.code).toBe('DATABASE_UNAVAILABLE');
+    expect(body.error.message).not.toContain('/home/');
+    expect(body.error.message).not.toContain('prisma.user.findUnique');
+  });
 });

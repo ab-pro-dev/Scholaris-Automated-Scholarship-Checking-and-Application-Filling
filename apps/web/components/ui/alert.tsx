@@ -39,9 +39,9 @@ export function Alert({
       {...props}
     >
       {icons[variant]}
-      <div className="space-y-0.5 flex-1">
-        {title && <h5 className="font-semibold">{title}</h5>}
-        <div className="leading-relaxed opacity-90">{children}</div>
+      <div className="space-y-0.5 flex-1 min-w-0">
+        {title && <h5 className="font-semibold break-words">{title}</h5>}
+        <div className="leading-relaxed opacity-90 break-words">{children}</div>
       </div>
     </div>
   );

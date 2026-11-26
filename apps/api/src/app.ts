@@ -94,6 +94,24 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
       });
     }
 
+    const prismaCode = (error as any)?.code;
+    if (
+      error.name === 'PrismaClientInitializationError' ||
+      prismaCode === 'P1001' ||
+      prismaCode === 'P1002' ||
+      error.message?.includes("Can't reach database server")
+    ) {
+      app.log.error(error);
+      return reply.status(503).send({
+        success: false,
+        error: {
+          code: 'DATABASE_UNAVAILABLE',
+          message:
+            'Database service is currently unreachable. Ensure PostgreSQL is running ("docker compose up -d") and try again.',
+        },
+      });
+    }
+
     app.log.error(error);
     return reply.status(fastifyErr.statusCode || 500).send({
       success: false,
