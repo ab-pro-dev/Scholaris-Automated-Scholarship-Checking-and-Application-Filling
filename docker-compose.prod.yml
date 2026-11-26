@@ -116,25 +116,6 @@ services:
       - scholaris-internal
       - scholaris-edge
 
-  web:
-    build:
-      context: .
-      dockerfile: apps/web/Dockerfile
-      args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL is required}
-    restart: always
-    depends_on:
-      api:
-        condition: service_healthy
-    environment:
-      NODE_ENV: production
-      PORT: 3000
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL is required}
-    ports:
-      - "3000:3000"
-    networks:
-      - scholaris-edge
-
 volumes:
   postgres_data:
   redis_data:

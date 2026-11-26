@@ -51,12 +51,6 @@ jobs:
         run: pnpm test
 
       - name: Build production bundles
-        env:
-          NEXT_PUBLIC_API_URL: http://localhost:3001
         run: |
           pnpm --filter @scholaris/api build
           pnpm --filter @scholaris/browser-worker build
-          pnpm --filter @scholaris/web build
-
-      - name: Lint Next.js frontend
-        run: pnpm --filter @scholaris/web lint || true

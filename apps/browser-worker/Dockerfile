@@ -13,7 +13,6 @@ WORKDIR /app
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
 COPY apps/api/package.json ./apps/api/
-COPY apps/web/package.json ./apps/web/
 COPY apps/browser-worker/package.json ./apps/browser-worker/
 COPY packages/ai/package.json ./packages/ai/
 COPY packages/database/package.json ./packages/database/

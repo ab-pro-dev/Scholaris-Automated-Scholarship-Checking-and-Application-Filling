@@ -42,22 +42,39 @@ describe('Health Check Routes', () => {
   });
 
   it('returns 503 DATABASE_UNAVAILABLE without leaking file paths when DB is unreachable', async () => {
-    const response = await app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/register',
-      payload: {
-        email: 'db-down-check@scholaris.test',
-        password: 'Password1!',
-        firstName: 'Test',
-        lastName: 'User',
+    const dbDownApp = await buildApp();
+    dbDownApp.prisma = {
+      $disconnect: async () => {},
+      user: {
+        findUnique: async () => {
+          const err = new Error("Can't reach database server at `localhost:5432`");
+          err.name = 'PrismaClientInitializationError';
+          throw err;
+        },
       },
-    });
+    } as any;
+    await dbDownApp.ready();
 
-    expect(response.statusCode).toBe(503);
-    const body = JSON.parse(response.body);
-    expect(body.success).toBe(false);
-    expect(body.error.code).toBe('DATABASE_UNAVAILABLE');
-    expect(body.error.message).not.toContain('/home/');
-    expect(body.error.message).not.toContain('prisma.user.findUnique');
+    try {
+      const response = await dbDownApp.inject({
+        method: 'POST',
+        url: '/api/v1/auth/register',
+        payload: {
+          email: 'db-down-check@scholaris.test',
+          password: 'Password1!',
+          firstName: 'Test',
+          lastName: 'User',
+        },
+      });
+
+      expect(response.statusCode).toBe(503);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.error.code).toBe('DATABASE_UNAVAILABLE');
+      expect(body.error.message).not.toContain('/home/');
+      expect(body.error.message).not.toContain('prisma.user.findUnique');
+    } finally {
+      await dbDownApp.close();
+    }
   });
 });
