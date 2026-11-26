@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    background-color: #F9F7F4;
+    color: #2B241F;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    caret-color: #2563EB;
+  }
+
+  body {
+    background-color: #F9F7F4;
+    color: #2B241F;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background-color: #2563EB;
+    color: #FFFFFF;
+  }
+
+  a {
+    text-underline-offset: 4px;
+  }
+
+  /* Subtle warm scrollbar matching the canvas palette */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #F3EEE5;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #D6CFC3;
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #B8AFA1;
+  }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-pulse {
+    animation: none;
+  }
+}
