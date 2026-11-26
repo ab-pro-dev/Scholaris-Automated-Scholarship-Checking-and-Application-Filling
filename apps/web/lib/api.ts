@@ -19,6 +19,7 @@ import {
   EligibilityEvaluationSummary,
   EligibilityResultDTO,
   ApplicationDTO,
+  ApplicationDashboardItemDTO,
   FieldMappingDTO,
   MissingInformationDTO,
   MissingInfoDetailDTO,
@@ -26,6 +27,8 @@ import {
   FieldMatchingSummary,
   ApplicationReviewDTO,
   SubmissionStatusDTO,
+  AdminSystemMetricsDTO,
+  AdminAuditLogDTO,
 } from '@scholaris/types';
 import {
   RegisterInput,
@@ -554,8 +557,8 @@ class ApiClient {
     });
   }
 
-  async listApplications(): Promise<any[]> {
-    return this.request<any[]>('/api/v1/applications', {
+  async listApplications(): Promise<ApplicationDashboardItemDTO[]> {
+    return this.request<ApplicationDashboardItemDTO[]>('/api/v1/applications', {
       method: 'GET',
     });
   }
@@ -661,6 +664,36 @@ class ApiClient {
         method: 'GET',
       }
     );
+  }
+
+  // ==========================================
+  // Admin Monitoring & Audit Logs (TASK-030)
+  // ==========================================
+
+  async getAdminMetrics(): Promise<AdminSystemMetricsDTO> {
+    return this.request<AdminSystemMetricsDTO>('/api/v1/admin/metrics', {
+      method: 'GET',
+    });
+  }
+
+  async getAdminAuditLogs(params?: {
+    userId?: string;
+    action?: string;
+    entityType?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<AdminAuditLogDTO[]> {
+    const query = new URLSearchParams();
+    if (params?.userId) query.set('userId', params.userId);
+    if (params?.action) query.set('action', params.action);
+    if (params?.entityType) query.set('entityType', params.entityType);
+    if (params?.page) query.set('page', params.page.toString());
+    if (params?.limit) query.set('limit', params.limit.toString());
+
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    return this.request<AdminAuditLogDTO[]>(`/api/v1/admin/audit-logs${qs}`, {
+      method: 'GET',
+    });
   }
 }
 

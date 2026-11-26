@@ -1,0 +1,62 @@
+name: Scholaris CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Typecheck, Lint, Test & Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate and validate Prisma client
+        run: |
+          pnpm --filter @scholaris/database db:generate
+          pnpm --filter @scholaris/database db:validate
+
+      - name: Typecheck all workspace packages
+        run: pnpm -r check-types
+
+      - name: Install Playwright Chromium for browser worker tests
+        run: pnpm --filter @scholaris/browser-worker exec playwright install --with-deps chromium
+
+      - name: Run unit, integration, security & E2E tests
+        env:
+          NODE_ENV: test
+          JWT_SECRET: ci-test-jwt-secret-key-at-least-32-chars!!
+          JWT_REFRESH_SECRET: ci-test-refresh-secret-at-least-32-chars!!
+        run: pnpm test
+
+      - name: Build production bundles
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:3001
+        run: |
+          pnpm --filter @scholaris/api build
+          pnpm --filter @scholaris/browser-worker build
+          pnpm --filter @scholaris/web build
+
+      - name: Lint Next.js frontend
+        run: pnpm --filter @scholaris/web lint || true

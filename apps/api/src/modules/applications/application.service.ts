@@ -216,10 +216,10 @@ export class ApplicationService {
   }
 
   /**
-   * Lists all applications for the student.
+   * Lists all applications for the student, enriched with completion & deadline metrics.
    */
   async listApplications(userId: string) {
-    return this.prisma.application.findMany({
+    const apps = await this.prisma.application.findMany({
       where: { userId },
       include: {
         scholarship: {
@@ -229,7 +229,12 @@ export class ApplicationService {
             providerName: true,
             deadline: true,
             verificationStatus: true,
+            fundingType: true,
           },
+        },
+        missingInformation: {
+          where: { isResolved: false },
+          select: { id: true },
         },
         _count: {
           select: {
@@ -240,6 +245,24 @@ export class ApplicationService {
         },
       },
       orderBy: { updatedAt: 'desc' },
+    });
+
+    return apps.map(({ missingInformation, ...app }) => {
+      const totalFields = app._count?.fields ?? 0;
+      const mappedFields = app._count?.fieldMappings ?? 0;
+      const unresolvedMissingCount = missingInformation?.length ?? 0;
+      const completionPercentage =
+        app.status === 'SUBMITTED'
+          ? 100
+          : totalFields > 0
+            ? Math.min(100, Math.round((mappedFields / totalFields) * 100))
+            : 0;
+
+      return {
+        ...app,
+        unresolvedMissingCount,
+        completionPercentage,
+      };
     });
   }
 

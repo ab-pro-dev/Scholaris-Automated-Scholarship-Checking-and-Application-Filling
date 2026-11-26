@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '../../context/auth-context';
-import { GraduationCap, User, Search, FileText, LogOut, Loader2, ShieldCheck, FolderLock } from 'lucide-react';
+import { GraduationCap, User, Search, FileText, LogOut, Loader2, ShieldCheck, FolderLock, Activity } from 'lucide-react';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 
@@ -37,6 +37,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: '/documents', label: 'Document Vault', icon: <FolderLock className="w-4 h-4" /> },
     { href: '/scholarships', label: 'Scholarship Verifier', icon: <ShieldCheck className="w-4 h-4" /> },
     { href: '/applications', label: 'My Applications', icon: <FileText className="w-4 h-4" /> },
+    ...(user?.role === 'ADMIN'
+      ? [{ href: '/admin', label: 'Admin Monitor', icon: <Activity className="w-4 h-4" /> }]
+      : []),
   ];
 
   return (

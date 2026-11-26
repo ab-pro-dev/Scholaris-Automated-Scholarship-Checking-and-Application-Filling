@@ -6,14 +6,86 @@ This file is the living memory of the **Scholaris** project (formerly ASCAF). It
 
 ## 1. Current State Summary
 
-- **Current Phase**: Phase 10: Student Dashboard, Tracking & Admin Panel (Phase 9 completed)
-- **Active Task**: None (Awaiting user approval to start `TASK-029: Student Application Tracking Dashboard`)
-- **Project Status**: `TASK-028: Explicit User Authorization & Submission Execution` completed and verified. Scholaris strictly enforces the **Mandatory Submission Rule**: automated submission is impossible without explicit student digital signature and recorded timestamp (`userApprovedAt`). Backend endpoints `POST /api/v1/applications/:id/approve` and `POST /api/v1/applications/:id/submit` gate execution, dispatching `SUBMIT_APPLICATION` jobs to the Playwright browser worker which navigates the portal, triggers final submission, validates confirmation DOM state, extracts confirmation reference codes, and archives proof screenshots to the S3 vault. Frontend features `AuthorizationModal` with dual legal consent checkboxes and electronic signature input, `SubmissionProgressModal` with real-time 4-stage pipeline stepper, live elapsed timer, confirmation receipt viewer, and text receipt download. Monorepo tests: 184/184 green (145 API + 9 AI + 30 Worker), 0 type errors across all 9 packages, and Next.js 15 web app building cleanly with 11 routes.
-- **Next Recommended Task**: `TASK-029: Student Application Tracking Dashboard`
+- **Current Phase**: Phase 12: Production Preparation & Deployment (All Phases 0–12 Completed!)
+- **Active Task**: None (All 34 roadmap tasks `TASK-000` through `TASK-033` are Completed)
+- **Project Status**: `TASK-033: Production Containerization & CI/CD Setup` completed and verified. Created `.dockerignore`, multi-stage non-root Dockerfiles for `apps/api`, `apps/web`, and `apps/browser-worker`, production orchestration (`docker-compose.prod.yml`) with isolated internal datastore networking, GitHub Actions CI workflow (`.github/workflows/ci.yml`), and `docs/DEPLOYMENT.md` production deployment guide. Verified full stack: Prisma schema valid, 0 type errors across all 9 packages, 196/196 tests passing, and clean production builds for `@scholaris/api`, `@scholaris/browser-worker`, and `@scholaris/web`.
+- **Next Recommended Task**: Roadmap complete — ready for production deployment or live staging environment verification.
 
 ---
 
 ## 2. Recently Completed Tasks
+
+### TASK-033: Production Containerization & CI/CD Setup
+- **Completed On**: 2026-11-26
+- **What Was Done**:
+  - Created `.dockerignore` and multi-stage non-root production Dockerfiles (`apps/api/Dockerfile`, `apps/web/Dockerfile`, `apps/browser-worker/Dockerfile`) with healthchecks and Prisma client generation.
+  - Created `docker-compose.prod.yml` orchestrating `postgres`, `redis`, `minio`, `api`, `browser-worker` (2GB/2vCPU cap + `ipc: host`), and `web` across isolated `scholaris-internal` and `scholaris-edge` Docker networks.
+  - Added `.github/workflows/ci.yml` automating `prisma validate`, `pnpm -r check-types`, Playwright Chromium setup, `pnpm test`, production builds (`api`, `browser-worker`, `web`), and Next.js linting on `push`/`pull_request` to `main`.
+  - Documented production secrets, SSL database setup, `prisma migrate deploy`, reverse proxy TLS, and SSRF/submission guardrails in `docs/DEPLOYMENT.md`.
+- **Verification Results**:
+  - `pnpm --filter @scholaris/database db:validate` passed (`schema.prisma` valid).
+  - `pnpm -r check-types` passed with **0 errors across all 9 packages**.
+  - `pnpm test` passed with **196/196 tests green** (156 API + 9 AI + 31 Browser Worker).
+  - `pnpm --filter @scholaris/api build`, `pnpm --filter @scholaris/browser-worker build`, and `pnpm --filter @scholaris/web build` all compiled cleanly.
+
+### TASK-032: Security & Privacy Audit
+- **Completed On**: 2026-11-25
+- **What Was Done**:
+  - Audited `DocumentService`, `ProfileService`, `ApplicationService`, `ssrf-validator.ts`, `network-firewall.ts`, `FieldMatcherService`, and `EssayDrafterService`.
+  - Authored `apps/api/test/security-audit.test.ts` covering 4 penetration/audit scenarios:
+    1. Cross-user document download, deletion, and S3 key prefix spoofing (`documents/${victimUserId}/...`) blocked (`403 Forbidden` / `404 Not Found` scoped by `userId`).
+    2. Cross-user profile education deletion and application review/approval blocked (`403` / `404`).
+    3. SSRF payloads targeting `127.0.0.1`, `localhost`, `169.254.169.254`, `10.0.0.1`, `172.16.0.12`, `192.168.1.1`, `::1`, `file:///etc/passwd`, and `ftp://` blocked by `validateUrlForSSRF` (`SSRFProtectionError`) and rejected by `POST /api/v1/scholarships/analyze` (`400`).
+    4. AI prompt audit verifying `passportNumberEncrypted` and sensitive credentials are never serialized into `FieldMatcherService` or `EssayDrafterService` prompts.
+- **Verification Results**:
+  - `pnpm -r check-types` passed with **0 errors across all 9 packages**.
+  - `pnpm test` passed with **196/196 tests green** (156 API + 9 AI + 31 Browser Worker).
+
+### TASK-031: Comprehensive Integration & E2E Testing Suite
+- **Completed On**: 2026-11-25
+- **What Was Done**:
+  - Created `apps/browser-worker/test/e2e-lifecycle.test.ts`:
+    - Controlled mock scholarship portal HTML with `text`, `email`, `date`, `<select>`, `radio`, `checkbox`, `<textarea>`, `<input type="file">`, draft button, and confirmation banner (`SCH-2026-E2E`).
+    - Verified `FormDetectorService.detectFormFields`, `FormFiller` + `FileUploader` PDF attachment, `filled` screenshot capture, `SubmissionGuard.assertCanExecuteAction` blocking unapproved submission, and approved submission confirmation + `submission-proof` screenshot capture.
+  - Created `apps/api/test/e2e-application-lifecycle.test.ts`:
+    - Verified full REST lifecycle: `POST /applications` -> `GET /review` (blocked) -> `PUT /missing-info/:infoId` -> `GET /review` (`canAuthorizeSubmission: true`) -> `POST /submit` (403 blocked before approval) -> `POST /approve` -> `POST /submit` -> `GET /submission-status` & `GET /applications`.
+- **Verification Results**:
+  - `pnpm -r check-types` passed with **0 errors across all 9 packages**.
+  - `pnpm test` passed with **192/192 tests green** (152 API + 9 AI + 31 Browser Worker).
+
+### TASK-030: Administrative Monitoring & System Metrics
+- **Completed On**: 2026-11-25
+- **What Was Done**:
+  - Added `server.requireAdmin` role guard in `apps/api/src/plugins/auth.ts` verifying JWT and enforcing `request.user.role === 'ADMIN'`.
+  - Added `AdminSystemMetricsDTO`, `AdminAuditLogDTO`, and `AdminAuditLogPageDTO` in `packages/types/src/index.ts`.
+  - Implemented `AdminService`, `AdminController`, and `adminRoutes` (`apps/api/src/modules/admin/`) registered in `apps/api/src/app.ts`:
+    - `GET /api/v1/admin/metrics`: Aggregates `AutomationJob` queue counts (`QUEUED`, `ACTIVE`, `COMPLETED`, `FAILED`), recent failed jobs, active/paused `BrowserSession` counts, and `AIRequest` metrics (total tokens, cost, average latency, fallback rate, failure rate, and per-provider breakdown).
+    - `GET /api/v1/admin/audit-logs`: Paginated `AuditLog` explorer with filtering by `userId`, `action`, and `entityType`.
+  - Built Admin Console UI (`apps/web/app/(dashboard)/admin/page.tsx`) with conditional `Admin Monitor` nav link in `apps/web/app/(dashboard)/layout.tsx` and typed client methods in `apps/web/lib/api.ts`.
+  - Authored `apps/api/test/admin.test.ts` (4 tests verifying 401 unauthenticated block, 403 non-admin block, metrics aggregation, and audit log filtering).
+- **Verification Results**:
+  - `pnpm -r check-types` passed with **0 errors across all 9 packages**.
+  - `pnpm test` passed with **190/190 tests green** (151 API + 9 AI + 30 Browser Worker).
+  - `pnpm --filter @scholaris/web build` compiled cleanly (`✓ Generating static pages (11/11)`).
+
+### TASK-029: Student Application Tracking Dashboard
+- **Completed On**: 2026-11-25
+- **What Was Done**:
+  - Enhanced Shared Types & API Endpoint (`packages/types/src/index.ts`, `apps/api/src/modules/applications/application.service.ts`, `apps/web/lib/api.ts`):
+    - Added `ApplicationDashboardItemDTO` with `scholarship` (`fundingType`, `deadline`, `verificationStatus`), `_count`, `unresolvedMissingCount`, and `completionPercentage`.
+    - Updated `ApplicationService.listApplications` to compute `unresolvedMissingCount` and `completionPercentage` (returning `100` for `SUBMITTED` applications).
+  - Built Student Application Tracking Dashboard UI (`apps/web/`):
+    - `apps/web/app/(dashboard)/applications/page.tsx`: Main `/applications` tracking dashboard with refresh/new-application actions, error recovery banner, KPI strip, and responsive 12-column grid.
+    - `apps/web/components/applications/dashboard-kpi-cards.tsx`: 4 interactive KPI cards (`Total Applications`, `Under Review / Input`, `Awaiting Approval`, `Submitted`) with proportional progress bars and click-to-filter support.
+    - `apps/web/components/applications/applications-table.tsx`: Searchable, sortable (`completion`, `deadline`, `updatedAt`), status-tabbed table with verification tags, completion bars, deadline countdown badges, empty state, and smart action links (`Continue`, `Review & Sign`, `View Receipt`).
+    - `apps/web/components/applications/deadlines-widget.tsx`: Chronological upcoming deadlines list with urgency badges (`<= 7d` amber) and quick "Verify New Scholarship" CTA card.
+    - `apps/web/components/applications/application-status-badge.tsx`: Semantic status pills covering all 9 `ApplicationStatus` variants.
+  - Authored automated test suite (`apps/api/test/application-dashboard.test.ts`):
+    - Verified 401 rejection on unauthenticated requests, accurate completion/unresolved metrics, and strict tenant isolation.
+- **Verification Results**:
+  - `pnpm -r check-types` passed with **0 errors across all 9 packages**.
+  - `pnpm test` passed with **186/186 tests green** (147 API + 9 AI + 30 Browser Worker).
+  - `pnpm --filter @scholaris/web build` compiled cleanly (`✓ Generating static pages (10/10)`).
 
 ### TASK-028: Explicit User Authorization & Submission Execution
 - **Completed On**: 2026-11-24

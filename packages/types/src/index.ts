@@ -341,6 +341,24 @@ export interface ApplicationDTO {
   updatedAt: string;
 }
 
+export interface ApplicationDashboardItemDTO extends ApplicationDTO {
+  scholarship: {
+    id: string;
+    title: string;
+    providerName: string;
+    deadline: string | null;
+    verificationStatus: VerificationStatus;
+    fundingType?: FundingType;
+  };
+  _count: {
+    fields: number;
+    fieldMappings: number;
+    missingInformation: number;
+  };
+  unresolvedMissingCount: number;
+  completionPercentage: number;
+}
+
 export interface SubmissionStatusDTO {
   applicationId: string;
   status: ApplicationStatus;
@@ -547,6 +565,75 @@ export interface ApiResponse<T = unknown> {
 }
 
 export interface PaginatedResponse<T> extends ApiResponse<T[]> {
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+// ==========================================
+// Admin Monitoring & Audit Types (TASK-030)
+// ==========================================
+
+export interface AdminSystemMetricsDTO {
+  generatedAt: string;
+  queues: {
+    totalJobs: number;
+    queued: number;
+    active: number;
+    completed: number;
+    failed: number;
+    activeBrowserSessions: number;
+    pausedBrowserSessions: number;
+    recentFailedJobs: Array<{
+      id: string;
+      applicationId: string | null;
+      type: AutomationJobType;
+      attempts: number;
+      errorLog: string | null;
+      updatedAt: string;
+    }>;
+  };
+  ai: {
+    totalRequests: number;
+    totalTokens: number;
+    totalEstimatedCostUSD: number;
+    averageLatencyMs: number;
+    fallbackRatePercent: number;
+    failureRatePercent: number;
+    byProvider: Record<
+      string,
+      {
+        requests: number;
+        tokens: number;
+        costUSD: number;
+        avgLatencyMs: number;
+      }
+    >;
+  };
+  users: {
+    totalUsers: number;
+    totalApplications: number;
+    submittedApplications: number;
+  };
+}
+
+export interface AdminAuditLogDTO {
+  id: string;
+  userId: string | null;
+  userEmail?: string | null;
+  action: string;
+  entityType: string;
+  entityId: string | null;
+  ipAddress: string | null;
+  details: Record<string, unknown> | null;
+  timestamp: string;
+}
+
+export interface AdminAuditLogPageDTO {
+  logs: AdminAuditLogDTO[];
   meta: {
     total: number;
     page: number;
