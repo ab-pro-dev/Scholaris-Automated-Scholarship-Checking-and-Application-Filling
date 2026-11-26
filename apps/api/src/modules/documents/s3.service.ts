@@ -4,6 +4,8 @@ import {
   GetObjectCommand,
   DeleteObjectCommand,
   HeadObjectCommand,
+  HeadBucketCommand,
+  CreateBucketCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { env } from '../../config/env.js';
@@ -11,6 +13,7 @@ import { env } from '../../config/env.js';
 export class S3Service {
   private client: S3Client;
   private bucket: string;
+  private bucketEnsured = false;
 
   constructor(customClient?: S3Client, customBucket?: string) {
     this.bucket = customBucket || env.S3_BUCKET;
@@ -27,11 +30,27 @@ export class S3Service {
       });
   }
 
+  async ensureBucketExists(): Promise<void> {
+    if (this.bucketEnsured) return;
+    try {
+      await this.client.send(new HeadBucketCommand({ Bucket: this.bucket }));
+      this.bucketEnsured = true;
+    } catch {
+      try {
+        await this.client.send(new CreateBucketCommand({ Bucket: this.bucket }));
+        this.bucketEnsured = true;
+      } catch (createErr) {
+        console.warn(`Unable to auto-create S3 bucket "${this.bucket}":`, createErr);
+      }
+    }
+  }
+
   async getPresignedUploadUrl(
     fileKey: string,
     mimeType: string,
     expiresIn = 900
   ): Promise<string> {
+    await this.ensureBucketExists();
     const command = new PutObjectCommand({
       Bucket: this.bucket,
       Key: fileKey,

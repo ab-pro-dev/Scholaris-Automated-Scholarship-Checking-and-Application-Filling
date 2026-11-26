@@ -45,10 +45,10 @@ services:
       - scholaris-network
 
   # ==========================================
-  # MinIO S3-Compatible Object Storage
+  # S3-Compatible Object Storage (MinIO / Silo)
   # ==========================================
   minio:
-    image: minio/minio:latest
+    image: pgsty/silo:RELEASE.2026-11-12T00-00-00Z
     container_name: scholaris-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
@@ -61,28 +61,10 @@ services:
     volumes:
       - minio_data:/data
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:9000/minio/health/live || mc ready local"]
       interval: 5s
       timeout: 5s
       retries: 5
-    networks:
-      - scholaris-network
-
-  # Provision Default Private Document Bucket
-  minio-init:
-    image: minio/mc:latest
-    container_name: scholaris-minio-init
-    depends_on:
-      minio:
-        condition: service_started
-    entrypoint: >
-      /bin/sh -c "
-      sleep 2;
-      mc alias set localminio http://minio:9000 minioadmin minioadmin;
-      mc mb --ignore-existing localminio/scholaris-documents;
-      echo 'MinIO private bucket scholaris-documents initialized.';
-      exit 0;
-      "
     networks:
       - scholaris-network
 

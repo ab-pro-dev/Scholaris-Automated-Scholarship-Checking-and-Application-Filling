@@ -33,7 +33,7 @@ services:
       - scholaris-internal
 
   minio:
-    image: minio/minio:latest
+    image: pgsty/silo:RELEASE.2026-11-12T00-00-00Z
     restart: always
     command: server /data --console-address ":9001"
     environment:
@@ -42,7 +42,7 @@ services:
     volumes:
       - minio_data:/data
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:9000/minio/health/live || mc ready local"]
       interval: 10s
       timeout: 5s
       retries: 5
