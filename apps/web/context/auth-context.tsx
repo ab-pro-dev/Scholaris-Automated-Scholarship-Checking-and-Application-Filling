@@ -18,6 +18,7 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+const IS_PREVIEW_MODE = process.env.NEXT_PUBLIC_PREVIEW_MODE === 'true';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserDTO | null>(null);
@@ -27,8 +28,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshUser = useCallback(async () => {
     const token = api.getAccessToken();
     if (!token) {
-      setUser(PREVIEW_USER);
-      setProfile(PREVIEW_PROFILE);
+      if (IS_PREVIEW_MODE) {
+        setUser(PREVIEW_USER);
+        setProfile(PREVIEW_PROFILE);
+      } else {
+        setUser(null);
+        setProfile(null);
+      }
       setIsLoading(false);
       return;
     }
@@ -39,8 +45,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile(data.profile);
     } catch {
       api.clearTokens();
-      setUser(PREVIEW_USER);
-      setProfile(PREVIEW_PROFILE);
+      if (IS_PREVIEW_MODE) {
+        setUser(PREVIEW_USER);
+        setProfile(PREVIEW_PROFILE);
+      } else {
+        setUser(null);
+        setProfile(null);
+      }
     } finally {
       setIsLoading(false);
     }

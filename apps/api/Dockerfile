@@ -13,6 +13,7 @@ WORKDIR /app
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
 COPY apps/api/package.json ./apps/api/
+COPY apps/web/package.json ./apps/web/
 COPY apps/browser-worker/package.json ./apps/browser-worker/
 COPY packages/ai/package.json ./packages/ai/
 COPY packages/database/package.json ./packages/database/
@@ -62,4 +63,4 @@ EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD wget -qO- http://127.0.0.1:3001/api/v1/health || exit 1
 
-CMD ["pnpm", "--filter", "@scholaris/api", "exec", "tsx", "dist/server.js"]
+CMD ["sh", "-c", "pnpm --filter @scholaris/database exec prisma db push --skip-generate && pnpm --filter @scholaris/api start"]

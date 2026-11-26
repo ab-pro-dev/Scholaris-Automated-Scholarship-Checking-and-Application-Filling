@@ -280,13 +280,14 @@ class ApiClient {
     loader: () => Promise<T>,
     fallback: () => T
   ): Promise<T> {
-    if (!this.getAccessToken()) {
+    const isPreviewMode = process.env.NEXT_PUBLIC_PREVIEW_MODE === 'true';
+    if (isPreviewMode && !this.getAccessToken()) {
       return fallback();
     }
     try {
       return await loader();
     } catch (err) {
-      if (err instanceof ApiError && err.statusCode === 0) {
+      if (isPreviewMode && err instanceof ApiError && err.statusCode === 0) {
         return fallback();
       }
       throw err;
