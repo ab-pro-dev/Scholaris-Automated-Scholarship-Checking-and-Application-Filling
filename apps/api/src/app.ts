@@ -74,13 +74,18 @@ export async function buildApp(opts: FastifyServerOptions = {}): Promise<Fastify
       });
     }
 
-    if (error instanceof ZodError) {
+    if (error instanceof ZodError || error.name === 'ZodError') {
+      const zodErr = error as ZodError;
+      const firstIssue = zodErr.issues?.[0]?.message;
       return reply.status(400).send({
         success: false,
         error: {
           code: 'VALIDATION_ERROR',
-          message: 'Invalid input data',
-          details: error.flatten().fieldErrors,
+          message: firstIssue || 'Invalid input data',
+          details:
+            typeof zodErr.flatten === 'function'
+              ? zodErr.flatten().fieldErrors
+              : zodErr.issues,
         },
       });
     }
