@@ -54,4 +54,4 @@ EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD wget -qO- http://127.0.0.1:3001/api/v1/health || exit 1
 
-CMD ["sh", "-c", "./packages/database/node_modules/.bin/prisma db push --schema=packages/database/prisma/schema.prisma --skip-generate && node apps/api/dist/server.js"]
+CMD ["sh", "-c", "./packages/database/node_modules/.bin/prisma db push --schema=packages/database/prisma/schema.prisma --skip-generate && ./apps/api/node_modules/.bin/tsx apps/api/dist/server.js"]
